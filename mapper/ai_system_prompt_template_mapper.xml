@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.bugstack.ai.infrastructure.dao.IAiSystemPromptTemplateDao">
+
+    <resultMap id="dataMap" type="cn.bugstack.ai.infrastructure.dao.po.AiSystemPromptTemplate">
+        <id column="id" property="id"/>
+        <result column="template_name" property="templateName"/>
+        <result column="template_type" property="templateType"/>
+        <result column="template_content" property="templateContent"/>
+        <result column="template_variables" property="templateVariables"/>
+        <result column="description" property="description"/>
+        <result column="status" property="status"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+    
+    <!-- 根据模板类型查询提示词模板 -->
+    <select id="queryPromptTemplateByType" parameterType="java.lang.String" resultMap="dataMap">
+        SELECT id, template_name, template_type, template_content, template_variables, description, status, create_time, update_time
+        FROM ai_system_prompt_template
+        WHERE template_type = #{templateType} AND status = 1
+        LIMIT 1
+    </select>
+    
+    <!-- 根据模板名称查询提示词模板 -->
+    <select id="queryPromptTemplateByName" parameterType="java.lang.String" resultMap="dataMap">
+        SELECT id, template_name, template_type, template_content, template_variables, description, status, create_time, update_time
+        FROM ai_system_prompt_template
+        WHERE template_name = #{templateName} AND status = 1
+    </select>
+    
+    <!-- 根据ID查询提示词模板 -->
+    <select id="queryPromptTemplateById" parameterType="java.lang.Long" resultMap="dataMap">
+        SELECT id, template_name, template_type, template_content, template_variables, description, status, create_time, update_time
+        FROM ai_system_prompt_template
+        WHERE id = #{id}
+    </select>
+    
+    <!-- 查询所有提示词模板 -->
+    <select id="queryAllPromptTemplates" resultMap="dataMap">
+        SELECT id, template_name, template_type, template_content, template_variables, description, status, create_time, update_time
+        FROM ai_system_prompt_template
+        WHERE status = 1
+        ORDER BY id
+    </select>
+    
+    <!-- 插入提示词模板 -->
+    <insert id="insert" parameterType="cn.bugstack.ai.infrastructure.dao.po.AiSystemPromptTemplate">
+        INSERT INTO ai_system_prompt_template (template_name, template_type, template_content, template_variables, description, status)
+        VALUES (#{templateName}, #{templateType}, #{templateContent}, #{templateVariables}, #{description}, #{status})
+    </insert>
+    
+    <!-- 更新提示词模板 -->
+    <update id="update" parameterType="cn.bugstack.ai.infrastructure.dao.po.AiSystemPromptTemplate">
+        UPDATE ai_system_prompt_template
+        SET template_name = #{templateName},
+            template_type = #{templateType},
+            template_content = #{templateContent},
+            template_variables = #{templateVariables},
+            description = #{description},
+            status = #{status},
+            update_time = CURRENT_TIMESTAMP
+        WHERE id = #{id}
+    </update>
+    
+    <!-- 删除提示词模板 -->
+    <delete id="deleteById" parameterType="java.lang.Long">
+        DELETE FROM ai_system_prompt_template WHERE id = #{id}
+    </delete>
+    
+</mapper>

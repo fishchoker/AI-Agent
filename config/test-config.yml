@@ -1,0 +1,34 @@
+# 测试配置文件
+# 用于验证配置化改造后的功能
+
+# 测试用的数据库配置
+spring:
+  datasource:
+    username: root
+    password: 123456
+    url: jdbc:mysql://127.0.0.1:3306/ai-agent-station?useUnicode=true&characterEncoding=utf8&autoReconnect=true&zeroDateTimeBehavior=convertToNull&serverTimezone=Asia/Shanghai&useSSL=true
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+# MyBatis 配置
+mybatis:
+  mapper-locations: classpath:/mybatis/mapper/*.xml
+  config-location: classpath:/mybatis/config/mybatis-config.xml
+
+# 配置化测试配置
+ai-agent:
+  configurable:
+    enabled: true
+    cache-timeout: 300
+    hot-reload: true
+    default-prompt-template-type: default
+    default-advisor-strategy-type: PromptChatMemory
+    default-tool-callback-type: mcp
+
+# 日志配置
+logging:
+  level:
+    root: info
+    cn.bugstack.ai.domain.agent.service.armory: debug
+    cn.bugstack.ai.domain.agent.service.template: debug
+    cn.bugstack.ai.domain.agent.service.strategy: debug
+    cn.bugstack.ai.domain.agent.service.callback: debug

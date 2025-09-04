@@ -1,0 +1,55 @@
+# AI Agent Station 配置化改造配置文件
+# 用于配置化改造后的应用配置
+
+server:
+  port: 8091
+
+# 线程池配置
+thread:
+  pool:
+    executor:
+      config:
+        core-pool-size: 20
+        max-pool-size: 50
+        keep-alive-time: 5000
+        block-queue-size: 5000
+        policy: CallerRunsPolicy
+
+# 数据库配置
+spring:
+  datasource:
+    username: root
+    password: 123456
+    url: jdbc:mysql://127.0.0.1:3306/ai-agent-station?useUnicode=true&characterEncoding=utf8&autoReconnect=true&zeroDateTimeBehavior=convertToNull&serverTimezone=Asia/Shanghai&useSSL=true
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+# MyBatis 配置
+mybatis:
+  mapper-locations: classpath:/mybatis/mapper/*.xml
+  config-location: classpath:/mybatis/config/mybatis-config.xml
+
+# 配置化相关配置
+ai-agent:
+  configurable:
+    # 是否启用配置化功能
+    enabled: true
+    # 配置缓存时间（秒）
+    cache-timeout: 300
+    # 是否支持配置热更新
+    hot-reload: true
+    # 默认提示词模板类型
+    default-prompt-template-type: default
+    # 默认顾问策略类型
+    default-advisor-strategy-type: PromptChatMemory
+    # 默认工具回调类型
+    default-tool-callback-type: mcp
+
+# 日志配置
+logging:
+  level:
+    root: info
+    cn.bugstack.ai.domain.agent.service.armory: debug
+    cn.bugstack.ai.domain.agent.service.template: debug
+    cn.bugstack.ai.domain.agent.service.strategy: debug
+    cn.bugstack.ai.domain.agent.service.callback: debug
+  config: classpath:logback-spring.xml

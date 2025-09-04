@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.bugstack.ai.infrastructure.dao.IAiAgentAssemblyConfigDao">
+
+    <resultMap id="dataMap" type="cn.bugstack.ai.infrastructure.dao.po.AiAgentAssemblyConfig">
+        <id column="id" property="id"/>
+        <result column="agent_id" property="agentId"/>
+        <result column="assembly_type" property="assemblyType"/>
+        <result column="assembly_order" property="assemblyOrder"/>
+        <result column="assembly_config" property="assemblyConfig"/>
+        <result column="status" property="status"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+    
+    <!-- 根据智能体ID查询组装配置 -->
+    <select id="queryAssemblyConfigByAgentId" parameterType="java.lang.Long" resultMap="dataMap">
+        SELECT id, agent_id, assembly_type, assembly_order, assembly_config, status, create_time, update_time
+        FROM ai_agent_assembly_config
+        WHERE agent_id = #{agentId} AND status = 1
+        ORDER BY assembly_order
+    </select>
+    
+    <!-- 根据智能体ID和组装类型查询配置 -->
+    <select id="queryAssemblyConfigByAgentIdAndType" resultMap="dataMap">
+        SELECT id, agent_id, assembly_type, assembly_order, assembly_config, status, create_time, update_time
+        FROM ai_agent_assembly_config
+        WHERE agent_id = #{agentId} AND assembly_type = #{assemblyType} AND status = 1
+        ORDER BY assembly_order
+    </select>
+    
+    <!-- 根据ID查询组装配置 -->
+    <select id="queryAssemblyConfigById" parameterType="java.lang.Long" resultMap="dataMap">
+        SELECT id, agent_id, assembly_type, assembly_order, assembly_config, status, create_time, update_time
+        FROM ai_agent_assembly_config
+        WHERE id = #{id}
+    </select>
+    
+    <!-- 插入组装配置 -->
+    <insert id="insert" parameterType="cn.bugstack.ai.infrastructure.dao.po.AiAgentAssemblyConfig">
+        INSERT INTO ai_agent_assembly_config (agent_id, assembly_type, assembly_order, assembly_config, status)
+        VALUES (#{agentId}, #{assemblyType}, #{assemblyOrder}, #{assemblyConfig}, #{status})
+    </insert>
+    
+    <!-- 更新组装配置 -->
+    <update id="update" parameterType="cn.bugstack.ai.infrastructure.dao.po.AiAgentAssemblyConfig">
+        UPDATE ai_agent_assembly_config
+        SET assembly_type = #{assemblyType},
+            assembly_order = #{assemblyOrder},
+            assembly_config = #{assemblyConfig},
+            status = #{status},
+            update_time = CURRENT_TIMESTAMP
+        WHERE id = #{id}
+    </update>
+    
+    <!-- 删除组装配置 -->
+    <delete id="deleteById" parameterType="java.lang.Long">
+        DELETE FROM ai_agent_assembly_config WHERE id = #{id}
+    </delete>
+    
+</mapper>
