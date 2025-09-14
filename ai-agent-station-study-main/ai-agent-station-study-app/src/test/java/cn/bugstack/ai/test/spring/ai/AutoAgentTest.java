@@ -555,7 +555,7 @@ public class AutoAgentTest {
                         ).build(),
                         SimpleLoggerAdvisor.builder().build())
                 .defaultOptions(OpenAiChatOptions.builder()
-                        .model("gpt-4.1")
+                        .model("glm-4.5")
                         .maxTokens(2500)
                         .temperature(0.2)
                         .build())

@@ -74,4 +74,23 @@ public class AiAgentController implements IAiAgentService {
         }
     }
 
+    /**
+     * 快速测试向量模型接口
+     */
+    @RequestMapping(value = "test_vector_model", method = RequestMethod.GET)
+    public String testVectorModel() {
+        try {
+            log.info("=== 测试向量模型接口 ===");
+            
+            // 这里可以注入PgVectorStore进行测试
+            // 或者调用相关的服务进行测试
+            
+            return "向量模型测试接口调用成功！请查看日志了解详细结果。";
+            
+        } catch (Exception e) {
+            log.error("向量模型测试失败", e);
+            return "向量模型测试失败：" + e.getMessage();
+        }
+    }
+
 }

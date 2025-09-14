@@ -9,7 +9,11 @@ import com.alibaba.fastjson.JSON;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 
+import org.springframework.ai.document.MetadataMode;
+import org.springframework.ai.embedding.EmbeddingRequest;
+import org.springframework.ai.embedding.EmbeddingResponse;
 import org.springframework.ai.openai.OpenAiEmbeddingModel;
+import org.springframework.ai.openai.OpenAiEmbeddingOptions;
 import org.springframework.ai.openai.api.OpenAiApi;
 import org.springframework.ai.vectorstore.pgvector.PgVectorStore;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -65,9 +69,23 @@ public class AiClientApiNode extends AbstractArmorySupport {
 
             // 注册 OpenAiApi Bean 对象
             registerBean(beanName(aiClientApiVO.getApiId()), OpenAiApi.class, openAiApi);
-            log.info("Ai Agent 构建节点，构建向量模型{}");
+            
+            log.info("Ai Agent 构建节点，构建向量模型 - API ID: {}", aiClientApiVO.getApiId());
             // 2. 构建 Embedding Model
-            OpenAiEmbeddingModel embeddingModel = new OpenAiEmbeddingModel(openAiApi);
+            OpenAiEmbeddingOptions options = OpenAiEmbeddingOptions.builder()
+            	    .model("embedding-3")  // 指定模型名
+            	    .build();
+            OpenAiEmbeddingModel embeddingModel = new OpenAiEmbeddingModel(openAiApi,MetadataMode.EMBED,options);
+            
+            // 快速测试向量模型
+            try {
+                float[] vector = embeddingModel.embed("向量模型测试");   // 返回单条文本的向量
+                log.info("✅ 向量模型可用，向量维度 = {}", vector.length);
+            } catch (Exception ex) {
+                log.error("❌ 向量模型调用失败: {}", ex.getMessage(), ex);
+            }
+
+
 
             // 3. 构建 PgVectorStore
 			/*

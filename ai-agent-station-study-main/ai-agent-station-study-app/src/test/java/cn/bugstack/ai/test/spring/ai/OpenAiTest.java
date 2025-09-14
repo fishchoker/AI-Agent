@@ -62,6 +62,7 @@ public class OpenAiTest {
     private OpenAiChatModel chatModel;
     
     @Autowired
+    @Qualifier("vectorStore")
     private PgVectorStore pgVectorStore;
 
     private final TokenTextSplitter tokenTextSplitter = new TokenTextSplitter();
@@ -162,6 +163,31 @@ public class OpenAiTest {
                         .build()));
 
         log.info("测试结果:{}", JSON.toJSONString(chatResponse));
+    }
+
+    /**
+     * 快速测试向量模型是否启用
+     */
+    @Test
+    public void testVectorModelQuick() {
+        try {
+            log.info("=== 快速测试向量模型 ===");
+            
+            // 测试向量存储的相似性搜索功能
+            String testQuery = "测试查询";
+            var searchResult = pgVectorStore.similaritySearch(testQuery);
+            
+            log.info("✅ 向量模型工作正常！搜索到 {} 个结果", searchResult.size());
+            
+            // 测试添加文档功能
+            String testContent = "这是一个快速测试文档 - " + System.currentTimeMillis();
+            pgVectorStore.add(List.of(new org.springframework.ai.document.Document(testContent)));
+            log.info("✅ 文档添加成功！");
+            
+        } catch (Exception e) {
+            log.error("❌ 向量模型测试失败", e);
+            throw e;
+        }
     }
 
 }

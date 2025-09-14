@@ -60,16 +60,16 @@ public class AiAgentMCPESTest {
     public void init() {
 
         OpenAiApi openAiApi = OpenAiApi.builder()
-                .baseUrl("https://apis.itedus.cn")
-                .apiKey("sk-iL1clxGn4nsegwFS8822Ba0eB5D1461eA0845360Eb9fFfFc")
-                .completionsPath("v1/chat/completions")
-                .embeddingsPath("v1/embeddings")
+                .baseUrl("https://open.bigmodel.cn/api/paas/")
+                .apiKey("sk-c259c3bbdeb449e7b0673c8f393006ab.iPaHfYyhLddTiOw5")
+                .completionsPath("v4/chat/completions")
+                .embeddingsPath("v4/embeddings")
                 .build();
 
         chatModel = OpenAiChatModel.builder()
                 .openAiApi(openAiApi)
                 .defaultOptions(OpenAiChatOptions.builder()
-                        .model("gpt-4.1-mini")
+                        .model("glm-4.5")
                         .toolCallbacks(new SyncMcpToolCallbackProvider(stdioMcpClientElasticsearch()).getToolCallbacks())
                         .build())
                 .build();
@@ -131,7 +131,9 @@ public class AiAgentMCPESTest {
         env.put("ES_URL","http://127.0.0.1:9200");
         env.put("ES_API_KEY","none");
 
-        var stdioParams = ServerParameters.builder("npx")
+        // Windows 下 npx 的绝对路径，例如 npm 安装目录下的 npx.cmd
+        String npxPath = "\"C:\\Program Files\\nodejs\\npx.cmd\"";
+        var stdioParams = ServerParameters.builder(npxPath)
                 .args("-y", "@elastic/mcp-server-elasticsearch")
                 .env(env)
                 .build();
