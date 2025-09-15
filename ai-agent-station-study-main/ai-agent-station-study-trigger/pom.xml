@@ -43,6 +43,7 @@
         <dependency>
             <groupId>cn.bugstack.ai</groupId>
             <artifactId>ai-agent-station-study-infrastructure</artifactId>
+            <version>1.0-SNAPSHOT</version>
         </dependency>
     </dependencies>
 

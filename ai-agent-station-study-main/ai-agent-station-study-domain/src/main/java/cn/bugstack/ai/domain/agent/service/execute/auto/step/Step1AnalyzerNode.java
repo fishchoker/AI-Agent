@@ -22,7 +22,7 @@ public class Step1AnalyzerNode extends AbstractExecuteSupport {
 
     @Override
     protected String doApply(ExecuteCommandEntity requestParameter, DefaultAutoAgentExecuteStrategyFactory.DynamicContext dynamicContext) throws Exception {
-        log.info("\n🎯 === 执行第 {} 步 ===", dynamicContext.getStep());
+        log.info("\n🎯 === 执行第 {} 步 == =", dynamicContext.getStep());
 
         // 获取配置信息
         AiAgentClientFlowConfigVO aiAgentClientFlowConfigVO = dynamicContext.getAiAgentClientFlowConfigVOMap().get(AiClientTypeEnumVO.TASK_ANALYZER_CLIENT.getCode());

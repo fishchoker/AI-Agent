@@ -1,15 +1,20 @@
 package cn.bugstack.ai.trigger.http.admin;
 
 import cn.bugstack.ai.infrastructure.dao.IAiClientAdvisorDao;
+import cn.bugstack.ai.infrastructure.dao.IAiClientConfigDao;
 import cn.bugstack.ai.infrastructure.dao.po.AiClientAdvisor;
+import cn.bugstack.ai.infrastructure.dao.po.AiClientConfig;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * 客户端顾问管理服务
@@ -25,6 +30,9 @@ public class AiAdminClientAdvisorController {
 
     @Resource
     private IAiClientAdvisorDao aiClientAdvisorDao;
+    
+    @Resource
+    private IAiClientConfigDao aiClientConfigDao;
 
     /**
      * 查询客户端顾问列表
@@ -36,20 +44,17 @@ public class AiAdminClientAdvisorController {
     public ResponseEntity<List<AiClientAdvisor>> queryClientAdvisorList(@RequestBody Map<String, Object> request) {
         try {
             List<AiClientAdvisor> advisorList;
-            
-            // 如果传入了advisorType，则根据advisorType查询
+
             if (request.containsKey("advisorType") && request.get("advisorType") != null) {
                 String advisorType = request.get("advisorType").toString();
                 advisorList = aiClientAdvisorDao.queryByAdvisorType(advisorType);
             } else if (request.containsKey("status") && request.get("status") != null) {
-                // 如果传入了status，则根据status查询
                 Integer status = Integer.valueOf(request.get("status").toString());
                 advisorList = aiClientAdvisorDao.queryByStatus(status);
             } else {
-                // 否则查询所有顾问
                 advisorList = aiClientAdvisorDao.queryAll();
             }
-            
+
             return ResponseEntity.ok(advisorList);
         } catch (Exception e) {
             log.error("查询客户端顾问列表异常", e);

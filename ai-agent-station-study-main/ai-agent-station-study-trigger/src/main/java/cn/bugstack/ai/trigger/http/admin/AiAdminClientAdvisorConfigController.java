@@ -1,7 +1,9 @@
 package cn.bugstack.ai.trigger.http.admin;
 
 import cn.bugstack.ai.infrastructure.dao.IAiClientAdvisorDao;
+import cn.bugstack.ai.infrastructure.dao.IAiClientConfigDao;
 import cn.bugstack.ai.infrastructure.dao.po.AiClientAdvisor;
+import cn.bugstack.ai.infrastructure.dao.po.AiClientConfig;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -13,6 +15,10 @@ import org.springframework.web.bind.annotation.RestController;
 import jakarta.annotation.Resource;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * AI客户端顾问配置控制器
@@ -27,22 +33,10 @@ public class AiAdminClientAdvisorConfigController {
     @Resource
     private IAiClientAdvisorDao aiClientAdvisorDao;
 
-    /**
-     * 查询客户端顾问配置列表
-     *
-     * @param aiClientAdvisor 查询条件
-     * @return 顾问配置列表
-     */
-    @RequestMapping(value = "queryClientAdvisorConfigList", method = RequestMethod.POST)
-    public ResponseEntity<List<AiClientAdvisor>> queryClientAdvisorConfigList(@RequestBody AiClientAdvisor aiClientAdvisor) {
-        try {
-            List<AiClientAdvisor> advisorList = aiClientAdvisorDao.queryAll();
-            return ResponseEntity.ok(advisorList);
-        } catch (Exception e) {
-            log.error("查询客户端顾问配置列表异常", e);
-            return ResponseEntity.status(500).build();
-        }
-    }
+    @Resource
+    private IAiClientConfigDao aiClientConfigDao;
+
+
 
     /**
      * 查询客户端顾问配置详情
@@ -133,6 +127,41 @@ public class AiAdminClientAdvisorConfigController {
             return ResponseEntity.ok(count > 0);
         } catch (Exception e) {
             log.error("删除客户端顾问配置异常", e);
+            return ResponseEntity.status(500).build();
+        }
+    }
+
+    /**
+     * 查询 ai_client_config 中 target_type='advisor' 的绑定关系列表
+     * 返回: [{clientId, advisorId, status, createTime, updateTime}, ...]
+     */
+    @RequestMapping(value = "queryClientAdvisorConfigList", method = RequestMethod.POST)
+    public ResponseEntity<List<Map<String, Object>>> queryClientAdvisorConfigList(@RequestBody(required = false) Map<String, Object> request) {
+        try {
+            String filterClientId = request != null && request.get("clientId") != null ? String.valueOf(request.get("clientId")) : null;
+            String filterAdvisorId = request != null && request.get("advisorId") != null ? String.valueOf(request.get("advisorId")) : null;
+
+            List<AiClientConfig> allConfigs = aiClientConfigDao.queryAll();
+
+            List<Map<String, Object>> bindings = allConfigs.stream()
+                    .filter(Objects::nonNull)
+                    .filter(cfg -> "advisor".equalsIgnoreCase(cfg.getTargetType()))
+                    .filter(cfg -> filterClientId == null || filterClientId.equals(String.valueOf(cfg.getSourceId())))
+                    .filter(cfg -> filterAdvisorId == null || filterAdvisorId.equals(String.valueOf(cfg.getTargetId())))
+                    .map(cfg -> {
+                        Map<String, Object> m = new HashMap<>();
+                        m.put("clientId", String.valueOf(cfg.getSourceId()));
+                        m.put("advisorId", String.valueOf(cfg.getTargetId()));
+                        m.put("status", cfg.getStatus());
+                        m.put("createTime", cfg.getCreateTime());
+                        m.put("updateTime", cfg.getUpdateTime());
+                        return m;
+                    })
+                    .collect(Collectors.toList());
+
+            return ResponseEntity.ok(bindings);
+        } catch (Exception e) {
+            log.error("查询客户端顾问配置列表异常", e);
             return ResponseEntity.status(500).build();
         }
     }

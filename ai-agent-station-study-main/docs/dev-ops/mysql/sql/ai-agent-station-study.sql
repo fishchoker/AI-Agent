@@ -46,12 +46,11 @@ LOCK TABLES `ai_agent` WRITE;
 
 INSERT INTO `ai_agent` (`id`, `agent_id`, `agent_name`, `description`, `channel`, `strategy`, `status`, `create_time`, `update_time`)
 VALUES
-	(6,'1','智能对话体（Flow）','自动自主规划','agent','flowAgentExecuteStrategy',1,'2025-06-14 12:41:20','2025-08-24 16:41:24'),
-	(7,'2','智能对话体（MCP）','自动发帖，工具服务','chat_stream','flowAgentExecuteStrategy',1,'2025-06-14 12:41:20','2025-06-14 12:41:20'),
+	(6,'1','自主规划（Flow）','自动自主规划','agent','flowAgentExecuteStrategy',1,'2025-06-14 12:41:20','2025-08-24 16:41:24'),
+	(7,'2','文档助手（MCP）','自动发帖，工具服务','chat_stream','flowAgentExecuteStrategy',1,'2025-06-14 12:41:20','2025-06-14 12:41:20'),
 	(8,'3','智能对话体（Auto）','文本调研自动分析和执行任务','agent','autoAgentExecuteStrategy',1,'2025-06-14 12:41:20','2025-08-09 10:55:46'),
-	(9,'4','智能对话体（Auto）','ES日志文件检索','agent','autoAgentExecuteStrategy',1,'2025-06-14 12:41:20','2025-08-09 10:55:46'),
-	(10,'5','智能对话体（Auto）-监控分析','智能监控分析服务','agent','autoAgentExecuteStrategy',1,'2025-06-14 12:41:20','2025-08-16 09:57:47'),
-	(11,'6','智能对话体（GitHub）','GitHub任务助手','agent','flowAgentExecuteStrategy',1,'2025-09-14 12:41:20','2025-09-14 14:16:47');
+	(9,'4','日志检索（Auto）','ES日志文件检索','agent','autoAgentExecuteStrategy',1,'2025-06-14 12:41:20','2025-08-09 10:55:46'),
+	(11,'6','文档助手（GitHub）','GitHub任务助手','agent','flowAgentExecuteStrategy',1,'2025-09-14 12:41:20','2025-09-14 14:16:47');
 
 /*!40000 ALTER TABLE `ai_agent` ENABLE KEYS */;
 UNLOCK TABLES;
@@ -497,9 +496,9 @@ LOCK TABLES `ai_client_tool_mcp` WRITE;
 
 INSERT INTO `ai_client_tool_mcp` (`id`, `mcp_id`, `mcp_name`, `transport_type`, `transport_config`, `request_timeout`, `status`, `create_time`, `update_time`)
 VALUES
-(8, '5003', 'filesystem', 'stdio', '{\n    \"filesystem\": {\n        \"command\": \"npx\",\n        \"args\": [\n            \"-y\",\n            \"@modelcontextprotocol/server-filesystem\",\n            \"/Users/fuzhengwei/Desktop\",\n            \"/Users/fuzhengwei/Desktop\"\n        ]\n    }\n}', 180, 1, '2025-06-14 12:36:30', '2025-07-05 16:31:44');
-(12, '5006', 'baidu-search', 'sse', '{\n	\"baseUri\":\"http://appbuilder.baidu.com/v2/ai_search/mcp/\",\n        \"sseEndpoint\":\"sse?api_key=Bearer+bce-v3/ALTAK-3zODLb9qHozIftQlGwez5/2696e92781f5bf1ba1870e2958f239fd6dc822a4\"\n}', 180, 1, '2025-06-14 12:36:30', '2025-07-27 14:44:17');
-(13, '5007', 'elasticsearch-mcp-server', 'stdio', '{\n    \"elasticsearch-mcp-server\": {\n      \"command\": \"npx\",\n      \"args\": [\n        \"-y\",\n        \"@awesome-ai/elasticsearch-mcp\"\n      ],\n      \"env\": {\n        \"ES_HOST\": \"http://127.0.0.1:9200\",\n        \"ES_API_KEY\": \"your-api-key\",\n        \"OTEL_SDK_DISABLED\":\"true\",\n        \"NODE_OPTIONS\":\"--no-warnings\"\n      }\n    }\n}', 180, 1, '2025-06-14 12:36:30', '2025-08-09 14:12:22');
+(8, '5003', 'filesystem', 'stdio', '{\n    \"filesystem\": {\n        \"command\": \"npx\",\n        \"args\": [\n            \"-y\",\n            \"@modelcontextprotocol/server-filesystem\",\n            \"/Users/fuzhengwei/Desktop\",\n            \"/Users/fuzhengwei/Desktop\"\n        ]\n    }\n}', 180, 1, '2025-06-14 12:36:30', '2025-07-05 16:31:44'),
+(12, '5006', 'baidu-search', 'sse', '{\n	\"baseUri\":\"http://appbuilder.baidu.com/v2/ai_search/mcp/\",\n        \"sseEndpoint\":\"sse?api_key=Bearer+bce-v3/ALTAK-3zODLb9qHozIftQlGwez5/2696e92781f5bf1ba1870e2958f239fd6dc822a4\"\n}', 180, 1, '2025-06-14 12:36:30', '2025-07-27 14:44:17'),
+(13, '5007', 'elasticsearch-mcp-server', 'stdio', '{\n    \"elasticsearch-mcp-server\": {\n      \"command\": \"npx\",\n      \"args\": [\n        \"-y\",\n        \"@awesome-ai/elasticsearch-mcp\"\n      ],\n      \"env\": {\n        \"ES_HOST\": \"http://127.0.0.1:9200\",\n        \"ES_API_KEY\": \"your-api-key\",\n        \"OTEL_SDK_DISABLED\":\"true\",\n        \"NODE_OPTIONS\":\"--no-warnings\"\n      }\n    }\n}', 180, 1, '2025-06-14 12:36:30', '2025-08-09 14:12:22'),
 (14, '5009', 'github', 'stdio', '{\n    \"github\": {\n      \"command\": \"cmd\",\n      \"args\": [\n        \"/c\",\n        \"npx\",\n        \"-y\",\n        \"@smithery/cli@latest\",\n        \"run\",\n        \"@smithery-ai/github\",\n        \"--key\",\n        \"4faab5a2-b1d5-494e-80bb-9f8902f728de\",\n        \"--profile\",\n        \"successful-caterpillar-qvfDEa\"\n      ]\n    }\n  }', 180, 1, '2025-06-14 12:36:30', '2025-06-14 12:36:40');
 /*!40000 ALTER TABLE `ai_client_tool_mcp` ENABLE KEYS */;
 UNLOCK TABLES;
