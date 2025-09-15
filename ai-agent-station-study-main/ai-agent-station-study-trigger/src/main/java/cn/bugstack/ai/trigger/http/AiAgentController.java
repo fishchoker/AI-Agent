@@ -41,6 +41,12 @@ public class AiAgentController implements IAiAgentService {
     public ResponseBodyEmitter autoAgent(@RequestBody AutoAgentRequestDTO request, HttpServletResponse response) {
         log.info("🔔 AutoAgent流式执行请求开始，请求信息：{}", JSON.toJSONString(request));
         
+        // 参数校验
+        if (request == null) {
+            log.error("请求参数不能为空");
+            throw new IllegalArgumentException("请求参数不能为空");
+        }
+        
         // 设置 SSE 头
         response.setContentType("text/event-stream");
         response.setCharacterEncoding("UTF-8");
@@ -51,12 +57,12 @@ public class AiAgentController implements IAiAgentService {
         ResponseBodyEmitter emitter = new ResponseBodyEmitter(Long.MAX_VALUE);
 
         try {
-            // 构建执行命令实体
+            // 构建执行命令实体，添加空值检查
             ExecuteCommandEntity executeCommandEntity = ExecuteCommandEntity.builder()
-                    .aiAgentId(request.getAiAgentId())
-                    .message(request.getMessage())
-                    .sessionId(request.getSessionId())
-                    .maxStep(request.getMaxStep())
+                    .aiAgentId(request.getAiAgentId() != null ? request.getAiAgentId() : "")
+                    .message(request.getMessage() != null ? request.getMessage() : "")
+                    .sessionId(request.getSessionId() != null ? request.getSessionId() : "")
+                    .maxStep(request.getMaxStep() != null ? request.getMaxStep() : 5) // 默认最大步数
                     .build();
 
             // 异步执行

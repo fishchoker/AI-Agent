@@ -35,4 +35,17 @@ public interface IAgentRepository {
 
     AiAgentVO queryAiAgentByAgentId(String aiAgentId);
 
+    /**
+     * 查询所有智能体配置列表
+     * @return 智能体配置列表
+     */
+    List<AiAgentVO> queryAiAgentList();
+
+    /**
+     * 根据渠道查询智能体配置列表
+     * @param channel 渠道类型
+     * @return 智能体配置列表
+     */
+    List<AiAgentVO> queryAiAgentListByChannel(String channel);
+
 }

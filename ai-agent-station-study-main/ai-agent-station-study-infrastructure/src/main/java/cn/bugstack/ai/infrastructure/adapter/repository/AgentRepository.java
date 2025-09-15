@@ -549,4 +549,44 @@ public class AgentRepository implements IAgentRepository {
                 .build();
     }
 
+    @Override
+    public List<AiAgentVO> queryAiAgentList() {
+        try {
+            List<AiAgent> aiAgentList = aiAgentDao.queryAll();
+            return aiAgentList.stream()
+                    .map(this::convertToAiAgentVO)
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            log.error("Query all ai agent list failed", e);
+            return List.of();
+        }
+    }
+
+    @Override
+    public List<AiAgentVO> queryAiAgentListByChannel(String channel) {
+        try {
+            List<AiAgent> aiAgentList = aiAgentDao.queryByChannel(channel);
+            return aiAgentList.stream()
+                    .map(this::convertToAiAgentVO)
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            log.error("Query ai agent list by channel failed, channel: {}", channel, e);
+            return List.of();
+        }
+    }
+
+    /**
+     * 转换AiAgent为AiAgentVO
+     */
+    private AiAgentVO convertToAiAgentVO(AiAgent aiAgent) {
+        return AiAgentVO.builder()
+                .agentId(aiAgent.getAgentId())
+                .agentName(aiAgent.getAgentName())
+                .description(aiAgent.getDescription())
+                .channel(aiAgent.getChannel())
+                .strategy(aiAgent.getStrategy())
+                .status(aiAgent.getStatus())
+                .build();
+    }
+
 }
