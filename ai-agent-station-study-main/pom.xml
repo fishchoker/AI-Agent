@@ -8,12 +8,12 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>ai-agent-station-study-api</module>
-        <module>ai-agent-station-study-app</module>
-        <module>ai-agent-station-study-domain</module>
-        <module>ai-agent-station-study-trigger</module>
-        <module>ai-agent-station-study-infrastructure</module>
         <module>ai-agent-station-study-types</module>
+        <module>ai-agent-station-study-api</module>
+        <module>ai-agent-station-study-domain</module>
+        <module>ai-agent-station-study-infrastructure</module>
+        <module>ai-agent-station-study-trigger</module>
+        <module>ai-agent-station-study-app</module>
     </modules>
 
     <repositories>

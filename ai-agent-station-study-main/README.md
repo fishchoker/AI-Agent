@@ -32,7 +32,7 @@
 
 #### 接口信息
 
-- **接口地址**: `POST /api/v1/agent/auto_agent`
+- **接口地址**: `POST /agent/auto_agent`
 - **请求方式**: POST
 - **响应格式**: Server-Sent Events (SSE) 流式响应
 - **Content-Type**: `application/json`
@@ -135,7 +135,7 @@ const requestData = {
 };
 
 // 发送POST请求
-fetch('http://localhost:8091/api/v1/agent/auto_agent', {
+fetch('http://localhost:8091/agent/auto_agent', {
     method: 'POST',
     headers: {
         'Content-Type': 'application/json',

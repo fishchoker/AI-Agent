@@ -1,0 +1,569 @@
+{
+  "project": {
+    "name": "AI Agent Station Study",
+    "version": "1.0-SNAPSHOT",
+    "baseUrl": "http://localhost:8091",
+    "lastUpdated": "2025-09-15"
+  },
+  "apis": {
+    "business": {
+      "rag": {
+        "basePath": "/rag/",
+        "endpoints": [
+          {
+            "method": "POST",
+            "path": "/rag/analyze_git_repository",
+            "description": "解析Git仓库",
+            "parameters": ["repoUrl", "userName", "token"],
+            "responseType": "Map<String, Object>"
+          }
+        ]
+      }
+    },
+    "admin": {
+      "agent": {
+        "basePath": "/ai/admin/agent/",
+        "endpoints": [
+          {
+            "method": "POST",
+            "path": "/ai/admin/agent/queryAiAgentList",
+            "description": "查询AI代理列表",
+            "parameters": ["AiAgent"],
+            "responseType": "List<AiAgent>"
+          },
+          {
+            "method": "POST",
+            "path": "/ai/admin/agent/queryAllAgentConfigListByChannel",
+            "description": "按渠道查询代理配置",
+            "parameters": ["Map<String, Object>"],
+            "responseType": "List<AiAgent>"
+          },
+          {
+            "method": "POST",
+            "path": "/ai/admin/agent/queryAiAgentDetail",
+            "description": "查询AI代理详情",
+            "parameters": ["AiAgent"],
+            "responseType": "AiAgent"
+          },
+          {
+            "method": "GET",
+            "path": "/ai/admin/agent/queryAiAgentDetail",
+            "description": "查询AI代理详情",
+            "parameters": ["id"],
+            "responseType": "AiAgent"
+          },
+          {
+            "method": "GET",
+            "path": "/ai/admin/agent/queryAiAgentById",
+            "description": "根据ID查询AI代理详情",
+            "parameters": ["id"],
+            "responseType": "AiAgent"
+          },
+          {
+            "method": "POST",
+            "path": "/ai/admin/agent/addAiAgent",
+            "description": "新增AI代理",
+            "parameters": ["AiAgent"],
+            "responseType": "Boolean"
+          },
+          {
+            "method": "POST",
+            "path": "/ai/admin/agent/updateAiAgent",
+            "description": "更新AI代理",
+            "parameters": ["AiAgent"],
+            "responseType": "Boolean"
+          },
+          {
+            "method": "POST",
+            "path": "/ai/admin/agent/deleteAiAgent",
+            "description": "删除AI代理",
+            "parameters": ["AiAgent"],
+            "responseType": "Boolean"
+          },
+          {
+            "method": "POST",
+            "path": "/ai/admin/agent/task/schedule/queryTaskScheduleList",
+            "description": "查询任务调度列表",
+            "parameters": ["Map<String, Object>"],
+            "responseType": "List<AiAgentTaskSchedule>"
+          },
+          {
+            "method": "POST",
+            "path": "/ai/admin/agent/task/schedule/queryTaskScheduleListByAgentId",
+            "description": "根据智能体ID查询任务调度列表",
+            "parameters": ["Map<String, Object>"],
+            "responseType": "List<AiAgentTaskSchedule>"
+          },
+          {
+            "method": "POST",
+            "path": "/ai/admin/agent/task/schedule/queryEnabledTaskScheduleList",
+            "description": "查询所有有效的任务调度",
+            "parameters": [],
+            "responseType": "List<AiAgentTaskSchedule>"
+          },
+          {
+            "method": "POST",
+            "path": "/ai/admin/agent/task/schedule/addTaskSchedule",
+            "description": "新增任务调度",
+            "parameters": ["AiAgentTaskSchedule"],
+            "responseType": "Boolean"
+          },
+          {
+            "method": "POST",
+            "path": "/ai/admin/agent/task/schedule/updateTaskSchedule",
+            "description": "更新任务调度",
+            "parameters": ["AiAgentTaskSchedule"],
+            "responseType": "Boolean"
+          },
+          {
+            "method": "POST",
+            "path": "/ai/admin/agent/task/schedule/deleteTaskSchedule",
+            "description": "删除任务调度",
+            "parameters": ["Map<String, Object>"],
+            "responseType": "Boolean"
+          },
+          {
+            "method": "POST",
+            "path": "/ai/admin/agent/client/queryAgentClientList",
+            "description": "查询客户端列表",
+            "parameters": ["Map<String, Object>"],
+            "responseType": "List<AiClient>"
+          },
+          {
+            "method": "POST",
+            "path": "/ai/admin/agent/client/queryClientDetail",
+            "description": "查询客户端详情",
+            "parameters": ["Map<String, Object>"],
+            "responseType": "AiClient"
+          },
+          {
+            "method": "POST",
+            "path": "/ai/admin/agent/client/queryEnabledClientList",
+            "description": "查询所有启用的客户端",
+            "parameters": [],
+            "responseType": "List<AiClient>"
+          },
+          {
+            "method": "POST",
+            "path": "/ai/admin/agent/client/addClient",
+            "description": "新增客户端",
+            "parameters": ["AiClient"],
+            "responseType": "Boolean"
+          },
+          {
+            "method": "POST",
+            "path": "/ai/admin/agent/client/updateClient",
+            "description": "更新客户端",
+            "parameters": ["AiClient"],
+            "responseType": "Boolean"
+          },
+          {
+            "method": "POST",
+            "path": "/ai/admin/agent/client/deleteClient",
+            "description": "删除客户端",
+            "parameters": ["Map<String, Object>"],
+            "responseType": "Boolean"
+          }
+        ]
+      },
+      "rag": {
+        "basePath": "/ai/admin/rag/",
+        "endpoints": [
+          {
+            "method": "POST",
+            "path": "/ai/admin/rag/queryRagOrderList",
+            "description": "查询RAG订单列表",
+            "parameters": ["AiClientRagOrder"],
+            "responseType": "List<AiClientRagOrder>"
+          },
+          {
+            "method": "POST",
+            "path": "/ai/admin/rag/queryAllValidRagOrder",
+            "description": "查询所有有效知识库",
+            "parameters": [],
+            "responseType": "List<AiClientRagOrder>"
+          },
+          {
+            "method": "POST",
+            "path": "/ai/admin/rag/queryRagOrderDetail",
+            "description": "查询知识库详情",
+            "parameters": ["AiClientRagOrder"],
+            "responseType": "AiClientRagOrder"
+          }
+        ]
+      },
+      "mcp": {
+        "basePath": "/ai/admin/client/tool/mcp/",
+        "endpoints": [
+          {
+            "method": "POST",
+            "path": "/ai/admin/client/tool/mcp/queryMcpList",
+            "description": "查询MCP工具列表",
+            "parameters": ["AiClientToolMcp"],
+            "responseType": "List<AiClientToolMcp>"
+          },
+          {
+            "method": "POST",
+            "path": "/ai/admin/client/tool/mcp/queryMcpDetail",
+            "description": "查询MCP工具详情",
+            "parameters": ["AiClientToolMcp"],
+            "responseType": "AiClientToolMcp"
+          },
+          {
+            "method": "POST",
+            "path": "/ai/admin/client/tool/mcp/addMcp",
+            "description": "新增MCP工具",
+            "parameters": ["AiClientToolMcp"],
+            "responseType": "Boolean"
+          },
+          {
+            "method": "POST",
+            "path": "/ai/admin/client/tool/mcp/updateMcp",
+            "description": "更新MCP工具",
+            "parameters": ["AiClientToolMcp"],
+            "responseType": "Boolean"
+          },
+          {
+            "method": "POST",
+            "path": "/ai/admin/client/tool/mcp/deleteMcp",
+            "description": "删除MCP工具",
+            "parameters": ["AiClientToolMcp"],
+            "responseType": "Boolean"
+          }
+        ]
+      },
+      "toolConfig": {
+        "basePath": "/ai/admin/client/tool/config/",
+        "endpoints": [
+          {
+            "method": "POST",
+            "path": "/ai/admin/client/tool/config/queryClientToolConfigList",
+            "description": "查询客户端工具配置列表",
+            "parameters": ["AiClientToolMcp"],
+            "responseType": "List<AiClientToolMcp>"
+          },
+          {
+            "method": "POST",
+            "path": "/ai/admin/client/tool/config/queryClientToolConfigDetail",
+            "description": "查询客户端工具配置详情",
+            "parameters": ["AiClientToolMcp"],
+            "responseType": "AiClientToolMcp"
+          },
+          {
+            "method": "POST",
+            "path": "/ai/admin/client/tool/config/addClientToolConfig",
+            "description": "新增客户端工具配置",
+            "parameters": ["AiClientToolMcp"],
+            "responseType": "Boolean"
+          },
+          {
+            "method": "POST",
+            "path": "/ai/admin/client/tool/config/updateClientToolConfig",
+            "description": "更新客户端工具配置",
+            "parameters": ["AiClientToolMcp"],
+            "responseType": "Boolean"
+          },
+          {
+            "method": "POST",
+            "path": "/ai/admin/client/tool/config/deleteClientToolConfig",
+            "description": "删除客户端工具配置",
+            "parameters": ["AiClientToolMcp"],
+            "responseType": "Boolean"
+          }
+        ]
+      },
+      "advisor": {
+        "basePath": "/ai/admin/client/advisor/",
+        "endpoints": [
+          {
+            "method": "POST",
+            "path": "/ai/admin/client/advisor/queryClientAdvisorList",
+            "description": "查询客户端顾问列表",
+            "parameters": ["Map<String, Object>"],
+            "responseType": "List<AiClientAdvisor>"
+          },
+          {
+            "method": "POST",
+            "path": "/ai/admin/client/advisor/queryAdvisorDetail",
+            "description": "查询顾问详情",
+            "parameters": ["Map<String, Object>"],
+            "responseType": "AiClientAdvisor"
+          },
+          {
+            "method": "POST",
+            "path": "/ai/admin/client/advisor/queryEnabledAdvisorList",
+            "description": "查询所有启用的顾问",
+            "parameters": [],
+            "responseType": "List<AiClientAdvisor>"
+          },
+          {
+            "method": "POST",
+            "path": "/ai/admin/client/advisor/addAdvisor",
+            "description": "新增顾问",
+            "parameters": ["AiClientAdvisor"],
+            "responseType": "Boolean"
+          },
+          {
+            "method": "POST",
+            "path": "/ai/admin/client/advisor/updateAdvisor",
+            "description": "更新顾问",
+            "parameters": ["AiClientAdvisor"],
+            "responseType": "Boolean"
+          },
+          {
+            "method": "POST",
+            "path": "/ai/admin/client/advisor/deleteAdvisor",
+            "description": "删除顾问",
+            "parameters": ["Map<String, Object>"],
+            "responseType": "Boolean"
+          }
+        ]
+      },
+      "advisorConfig": {
+        "basePath": "/ai/admin/client/advisor/config/",
+        "endpoints": [
+          {
+            "method": "POST",
+            "path": "/ai/admin/client/advisor/config/queryClientAdvisorConfigList",
+            "description": "查询客户端顾问配置列表",
+            "parameters": ["AiClientAdvisor"],
+            "responseType": "List<AiClientAdvisor>"
+          },
+          {
+            "method": "POST",
+            "path": "/ai/admin/client/advisor/config/queryClientAdvisorConfigDetail",
+            "description": "查询客户端顾问配置详情",
+            "parameters": ["AiClientAdvisor"],
+            "responseType": "AiClientAdvisor"
+          },
+          {
+            "method": "POST",
+            "path": "/ai/admin/client/advisor/config/addClientAdvisorConfig",
+            "description": "新增客户端顾问配置",
+            "parameters": ["AiClientAdvisor"],
+            "responseType": "Boolean"
+          },
+          {
+            "method": "POST",
+            "path": "/ai/admin/client/advisor/config/updateClientAdvisorConfig",
+            "description": "更新客户端顾问配置",
+            "parameters": ["AiClientAdvisor"],
+            "responseType": "Boolean"
+          },
+          {
+            "method": "POST",
+            "path": "/ai/admin/client/advisor/config/deleteClientAdvisorConfig",
+            "description": "删除客户端顾问配置",
+            "parameters": ["AiClientAdvisor"],
+            "responseType": "Boolean"
+          }
+        ]
+      },
+      "systemPrompt": {
+        "basePath": "/ai/admin/client/system/prompt/",
+        "endpoints": [
+          {
+            "method": "POST",
+            "path": "/ai/admin/client/system/prompt/queryClientSystemPromptList",
+            "description": "查询系统提示词列表",
+            "parameters": ["AiClientSystemPrompt"],
+            "responseType": "List<AiClientSystemPrompt>"
+          },
+          {
+            "method": "POST",
+            "path": "/ai/admin/client/system/prompt/queryClientSystemPromptDetail",
+            "description": "查询系统提示词详情",
+            "parameters": ["AiClientSystemPrompt"],
+            "responseType": "AiClientSystemPrompt"
+          },
+          {
+            "method": "POST",
+            "path": "/ai/admin/client/system/prompt/addClientSystemPrompt",
+            "description": "新增系统提示词",
+            "parameters": ["AiClientSystemPrompt"],
+            "responseType": "Boolean"
+          },
+          {
+            "method": "POST",
+            "path": "/ai/admin/client/system/prompt/updateClientSystemPrompt",
+            "description": "更新系统提示词",
+            "parameters": ["AiClientSystemPrompt"],
+            "responseType": "Boolean"
+          },
+          {
+            "method": "POST",
+            "path": "/ai/admin/client/system/prompt/deleteClientSystemPrompt",
+            "description": "删除系统提示词",
+            "parameters": ["AiClientSystemPrompt"],
+            "responseType": "Boolean"
+          }
+        ]
+      },
+      "model": {
+        "basePath": "/ai/admin/client/model/",
+        "endpoints": [
+          {
+            "method": "POST",
+            "path": "/ai/admin/client/model/queryClientModelList",
+            "description": "查询客户端模型列表",
+            "parameters": ["Map<String, Object>"],
+            "responseType": "List<AiClientModel>"
+          },
+          {
+            "method": "POST",
+            "path": "/ai/admin/client/model/queryModelDetail",
+            "description": "查询模型详情",
+            "parameters": ["Map<String, Object>"],
+            "responseType": "AiClientModel"
+          },
+          {
+            "method": "POST",
+            "path": "/ai/admin/client/model/queryEnabledModelList",
+            "description": "查询所有启用的模型",
+            "parameters": [],
+            "responseType": "List<AiClientModel>"
+          },
+          {
+            "method": "POST",
+            "path": "/ai/admin/client/model/addModel",
+            "description": "新增模型",
+            "parameters": ["AiClientModel"],
+            "responseType": "Boolean"
+          },
+          {
+            "method": "POST",
+            "path": "/ai/admin/client/model/updateModel",
+            "description": "更新模型",
+            "parameters": ["AiClientModel"],
+            "responseType": "Boolean"
+          },
+          {
+            "method": "POST",
+            "path": "/ai/admin/client/model/deleteModel",
+            "description": "删除模型",
+            "parameters": ["Map<String, Object>"],
+            "responseType": "Boolean"
+          }
+        ]
+      },
+      "modelConfig": {
+        "basePath": "/ai/admin/client/model/config/",
+        "endpoints": [
+          {
+            "method": "POST",
+            "path": "/ai/admin/client/model/config/queryClientModelConfigList",
+            "description": "查询模型配置列表",
+            "parameters": ["AiClientModel"],
+            "responseType": "List<AiClientModel>"
+          },
+          {
+            "method": "POST",
+            "path": "/ai/admin/client/model/config/queryClientModelConfigDetail",
+            "description": "查询模型配置详情",
+            "parameters": ["AiClientModel"],
+            "responseType": "AiClientModel"
+          },
+          {
+            "method": "POST",
+            "path": "/ai/admin/client/model/config/addClientModelConfig",
+            "description": "新增模型配置",
+            "parameters": ["AiClientModel"],
+            "responseType": "Boolean"
+          },
+          {
+            "method": "POST",
+            "path": "/ai/admin/client/model/config/updateClientModelConfig",
+            "description": "更新模型配置",
+            "parameters": ["AiClientModel"],
+            "responseType": "Boolean"
+          },
+          {
+            "method": "POST",
+            "path": "/ai/admin/client/model/config/deleteClientModelConfig",
+            "description": "删除模型配置",
+            "parameters": ["AiClientModel"],
+            "responseType": "Boolean"
+          }
+        ]
+      }
+    }
+  },
+  "dataModels": {
+    "AiAgent": {
+      "id": "Long",
+      "agentId": "String",
+      "agentName": "String",
+      "description": "String",
+      "channel": "String",
+      "strategy": "String",
+      "status": "Integer",
+      "createTime": "LocalDateTime",
+      "updateTime": "LocalDateTime"
+    },
+    "AiClientRagOrder": {
+      "id": "Long",
+      "ragId": "String",
+      "ragName": "String",
+      "knowledgeTag": "String",
+      "status": "Integer",
+      "createTime": "LocalDateTime",
+      "updateTime": "LocalDateTime"
+    },
+    "AiClientToolMcp": {
+      "id": "Long",
+      "mcpId": "String",
+      "mcpName": "String",
+      "transportType": "String",
+      "transportConfig": "String",
+      "requestTimeout": "Integer",
+      "status": "Integer",
+      "createTime": "LocalDateTime",
+      "updateTime": "LocalDateTime"
+    },
+    "AiClientAdvisor": {
+      "id": "Long",
+      "advisorId": "String",
+      "advisorName": "String",
+      "advisorType": "String",
+      "userTextAdvise": "String",
+      "status": "Integer",
+      "createTime": "LocalDateTime",
+      "updateTime": "LocalDateTime"
+    },
+    "AiClientSystemPrompt": {
+      "id": "Long",
+      "promptId": "String",
+      "promptName": "String",
+      "promptContent": "String",
+      "status": "Integer",
+      "createTime": "LocalDateTime",
+      "updateTime": "LocalDateTime"
+    },
+    "AiClientModel": {
+      "id": "Long",
+      "modelId": "String",
+      "apiId": "String",
+      "modelName": "String",
+      "modelType": "String",
+      "status": "Integer",
+      "createTime": "LocalDateTime",
+      "updateTime": "LocalDateTime"
+    }
+  },
+  "responseCodes": {
+    "0000": "成功",
+    "0001": "未知失败",
+    "0002": "非法参数",
+    "5000": "系统异常"
+  },
+  "commonHeaders": {
+    "Content-Type": "application/json",
+    "Accept": "application/json"
+  },
+  "cors": {
+    "enabled": true,
+    "origins": "*",
+    "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    "headers": "*"
+  }
+}
