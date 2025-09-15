@@ -76,6 +76,28 @@ public class AiAdminClientAdvisorController {
     }
 
     /**
+     * 根据主键ID查询顾问详情 (GET 方法)
+     *
+     * @param id 主键ID
+     * @return 顾问详情
+     */
+    @RequestMapping(value = "queryClientAdvisorById", method = RequestMethod.GET)
+    public ResponseEntity<AiClientAdvisor> queryClientAdvisorById(@RequestParam("id") Long id) {
+        try {
+            log.info("查询顾问详情，请求ID: {}", id);
+            AiClientAdvisor advisor = aiClientAdvisorDao.queryById(id);
+            if (advisor == null) {
+                log.warn("未找到顾问信息，ID: {}", id);
+                return ResponseEntity.ok().body(null);
+            }
+            return ResponseEntity.ok(advisor);
+        } catch (Exception e) {
+            log.error("根据主键ID查询顾问详情异常", e);
+            return ResponseEntity.status(500).build();
+        }
+    }
+
+    /**
      * 查询所有启用的顾问
      *
      * @return 启用的顾问列表
@@ -117,7 +139,7 @@ public class AiAdminClientAdvisorController {
      * @param advisor 顾问配置
      * @return 结果
      */
-    @RequestMapping(value = "updateAdvisor", method = RequestMethod.POST)
+    @RequestMapping(value = {"updateClientAdvisor", "advisor/updateClientAdvisor"}, method = RequestMethod.POST)
     public ResponseEntity<Boolean> updateAdvisor(@RequestBody AiClientAdvisor advisor) {
         try {
             advisor.setUpdateTime(LocalDateTime.now());

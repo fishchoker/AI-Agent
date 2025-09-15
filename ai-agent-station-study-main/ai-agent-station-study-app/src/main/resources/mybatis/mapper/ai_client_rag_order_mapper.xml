@@ -21,12 +21,14 @@
     </insert>
 
     <update id="updateById" parameterType="cn.bugstack.ai.infrastructure.dao.po.AiClientRagOrder">
-        UPDATE ai_client_rag_order SET
-            rag_id = #{ragId},
-            rag_name = #{ragName},
-            knowledge_tag = #{knowledgeTag},
-            status = #{status},
+        UPDATE ai_client_rag_order
+        <set>
+            <if test="ragId != null">rag_id = #{ragId},</if>
+            <if test="ragName != null">rag_name = #{ragName},</if>
+            <if test="knowledgeTag != null">knowledge_tag = #{knowledgeTag},</if>
+            <if test="status != null">status = #{status},</if>
             update_time = #{updateTime}
+        </set>
         WHERE id = #{id}
     </update>
 

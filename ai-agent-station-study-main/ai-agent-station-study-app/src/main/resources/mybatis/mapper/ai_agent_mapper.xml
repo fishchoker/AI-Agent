@@ -23,14 +23,16 @@
     </insert>
 
     <update id="updateById" parameterType="cn.bugstack.ai.infrastructure.dao.po.AiAgent">
-        UPDATE ai_agent SET
-            agent_id = #{agentId},
-            agent_name = #{agentName},
-            description = #{description},
-            channel = #{channel},
-        strategy = #{strategy},
-            status = #{status},
+        UPDATE ai_agent
+        <set>
+            <if test="agentId != null">agent_id = #{agentId},</if>
+            <if test="agentName != null">agent_name = #{agentName},</if>
+            <if test="description != null">description = #{description},</if>
+            <if test="channel != null">channel = #{channel},</if>
+            <if test="strategy != null">strategy = #{strategy},</if>
+            <if test="status != null">status = #{status},</if>
             update_time = #{updateTime}
+        </set>
         WHERE id = #{id}
     </update>
 

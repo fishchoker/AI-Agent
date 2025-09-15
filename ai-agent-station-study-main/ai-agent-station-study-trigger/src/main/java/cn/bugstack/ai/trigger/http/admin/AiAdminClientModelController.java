@@ -76,6 +76,23 @@ public class AiAdminClientModelController {
     }
 
     /**
+     * 根据主键ID查询模型详情 (GET 方法)
+     *
+     * @param id 主键ID
+     * @return 模型详情
+     */
+    @RequestMapping(value = "queryClientModelById", method = RequestMethod.GET)
+    public ResponseEntity<AiClientModel> queryClientModelById(@RequestParam("id") Long id) {
+        try {
+            AiClientModel model = aiClientModelDao.queryById(id);
+            return ResponseEntity.ok(model);
+        } catch (Exception e) {
+            log.error("根据主键ID查询模型详情异常", e);
+            return ResponseEntity.status(500).build();
+        }
+    }
+
+    /**
      * 查询所有启用的模型
      *
      * @return 启用的模型列表

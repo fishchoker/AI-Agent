@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.annotation.Resource;
@@ -56,6 +57,23 @@ public class AiAdminClientModelConfigController {
             return ResponseEntity.ok(model);
         } catch (Exception e) {
             log.error("查询客户端模型配置详情异常", e);
+            return ResponseEntity.status(500).build();
+        }
+    }
+
+    /**
+     * 根据主键ID查询模型配置详情 (GET 方法)
+     *
+     * @param id 主键ID
+     * @return 模型配置详情
+     */
+    @RequestMapping(value = "queryClientModelConfigById", method = RequestMethod.GET)
+    public ResponseEntity<AiClientModel> queryClientModelConfigById(@RequestParam("id") Long id) {
+        try {
+            AiClientModel model = aiClientModelDao.queryById(id);
+            return ResponseEntity.ok(model);
+        } catch (Exception e) {
+            log.error("根据主键ID查询客户端模型配置详情异常", e);
             return ResponseEntity.status(500).build();
         }
     }

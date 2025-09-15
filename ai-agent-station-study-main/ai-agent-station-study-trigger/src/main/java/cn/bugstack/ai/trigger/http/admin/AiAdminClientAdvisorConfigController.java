@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.annotation.Resource;
@@ -56,6 +57,28 @@ public class AiAdminClientAdvisorConfigController {
             return ResponseEntity.ok(advisor);
         } catch (Exception e) {
             log.error("查询客户端顾问配置详情异常", e);
+            return ResponseEntity.status(500).build();
+        }
+    }
+
+    /**
+     * 根据主键ID查询顾问配置详情 (GET 方法)
+     *
+     * @param id 主键ID
+     * @return 顾问配置详情
+     */
+    @RequestMapping(value = "queryClientAdvisorConfigById", method = RequestMethod.GET)
+    public ResponseEntity<AiClientAdvisor> queryClientAdvisorConfigById(@RequestParam("id") Long id) {
+        try {
+            log.info("查询顾问配置详情，请求ID: {}", id);
+            AiClientAdvisor advisor = aiClientAdvisorDao.queryById(id);
+            if (advisor == null) {
+                log.warn("未找到顾问配置，ID: {}", id);
+                return ResponseEntity.ok().body(null);
+            }
+            return ResponseEntity.ok(advisor);
+        } catch (Exception e) {
+            log.error("根据主键ID查询客户端顾问配置详情异常", e);
             return ResponseEntity.status(500).build();
         }
     }

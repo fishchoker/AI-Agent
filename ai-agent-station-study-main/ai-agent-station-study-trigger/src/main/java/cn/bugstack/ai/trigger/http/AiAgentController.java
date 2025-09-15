@@ -49,12 +49,20 @@ public class AiAgentController implements IAiAgentService {
             // 1. 创建流式输出对象
             ResponseBodyEmitter emitter = new ResponseBodyEmitter(Long.MAX_VALUE);
             
-            // 2. 构建执行命令实体
+            // 2. 校验与构建执行命令实体
+            String resolvedAgentId = request.getAgentId();
+            if ((resolvedAgentId == null || resolvedAgentId.trim().isEmpty()) && request.getAgentId() != null) {
+                resolvedAgentId = String.valueOf(request.getAgentId());
+            }
+            if (request == null || resolvedAgentId == null || resolvedAgentId.trim().isEmpty()) {
+                throw new IllegalArgumentException("aiAgentId不能为空");
+            }
+            Integer resolvedMaxStep = request.getMaxStep() != null ? request.getMaxStep() : 5;
             ExecuteCommandEntity executeCommandEntity = ExecuteCommandEntity.builder()
-                    .aiAgentId(request.getAiAgentId())
+                    .aiAgentId(resolvedAgentId)
                     .message(request.getMessage())
                     .sessionId(request.getSessionId())
-                    .maxStep(request.getMaxStep())
+                    .maxStep(resolvedMaxStep)
                     .build();
             
             // 3. 调度处理

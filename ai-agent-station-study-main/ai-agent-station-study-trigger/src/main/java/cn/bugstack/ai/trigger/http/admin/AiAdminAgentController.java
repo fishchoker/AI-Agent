@@ -132,6 +132,25 @@ public class AiAdminAgentController {
     @RequestMapping(value = "addAiAgent", method = RequestMethod.POST)
     public ResponseEntity<Boolean> addAiAgent(@RequestBody AiAgent aiAgent) {
         try {
+            // 基础校验与默认值
+            if (aiAgent == null) {
+                return ResponseEntity.badRequest().build();
+            }
+            if (aiAgent.getAgentId() == null || aiAgent.getAgentId().trim().isEmpty()) {
+                return ResponseEntity.badRequest().build();
+            }
+            if (aiAgent.getAgentName() == null || aiAgent.getAgentName().trim().isEmpty()) {
+                return ResponseEntity.badRequest().build();
+            }
+            if (aiAgent.getChannel() == null || aiAgent.getChannel().trim().isEmpty()) {
+                aiAgent.setChannel("agent");
+            }
+            if (aiAgent.getStrategy() == null || aiAgent.getStrategy().trim().isEmpty()) {
+                aiAgent.setStrategy("flowAgentExecuteStrategy");
+            }
+            if (aiAgent.getStatus() == null) {
+                aiAgent.setStatus(1);
+            }
             aiAgent.setCreateTime(LocalDateTime.now());
             aiAgent.setUpdateTime(LocalDateTime.now());
             int count = aiAgentDao.insert(aiAgent);
@@ -294,6 +313,23 @@ public class AiAdminAgentController {
     }
 
     /**
+     * 根据主键ID查询任务调度详情 (GET 方法)
+     *
+     * @param id 主键ID
+     * @return 任务调度详情
+     */
+    @RequestMapping(value = "task/schedule/queryTaskScheduleById", method = RequestMethod.GET)
+    public ResponseEntity<AiAgentTaskSchedule> queryTaskScheduleById(@RequestParam("id") Long id) {
+        try {
+            AiAgentTaskSchedule taskSchedule = aiAgentTaskScheduleDao.queryById(id);
+            return ResponseEntity.ok(taskSchedule);
+        } catch (Exception e) {
+            log.error("根据主键ID查询任务调度详情异常", e);
+            return ResponseEntity.status(500).build();
+        }
+    }
+
+    /**
      * 查询客户端列表
      *
      * @param request 查询条件
@@ -334,6 +370,23 @@ public class AiAdminAgentController {
             return ResponseEntity.ok(client);
         } catch (Exception e) {
             log.error("查询客户端详情异常", e);
+            return ResponseEntity.status(500).build();
+        }
+    }
+
+    /**
+     * 根据主键ID查询客户端详情 (GET 方法)
+     *
+     * @param id 主键ID
+     * @return 客户端详情
+     */
+    @RequestMapping(value = "client/queryAgentClientById", method = RequestMethod.GET)
+    public ResponseEntity<AiClient> queryAgentClientById(@RequestParam("id") Long id) {
+        try {
+            AiClient client = aiClientDao.queryById(id);
+            return ResponseEntity.ok(client);
+        } catch (Exception e) {
+            log.error("根据主键ID查询客户端详情异常", e);
             return ResponseEntity.status(500).build();
         }
     }

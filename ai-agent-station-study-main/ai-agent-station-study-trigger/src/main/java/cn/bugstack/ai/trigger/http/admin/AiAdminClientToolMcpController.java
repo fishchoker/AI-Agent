@@ -57,6 +57,20 @@ public class AiAdminClientToolMcpController {
     }
 
     /**
+     * 根据主键ID查询MCP工具详情 (GET 方法)
+     */
+    @RequestMapping(value = "queryMcpById", method = RequestMethod.GET)
+    public ResponseEntity<AiClientToolMcp> queryMcpById(@RequestParam("id") Long id) {
+        try {
+            AiClientToolMcp mcp = aiClientToolMcpDao.queryById(id);
+            return ResponseEntity.ok(mcp);
+        } catch (Exception e) {
+            log.error("根据主键ID查询MCP工具详情异常", e);
+            return ResponseEntity.status(500).build();
+        }
+    }
+
+    /**
      * 新增MCP工具
      *
      * @param aiClientToolMcp MCP工具
@@ -65,6 +79,25 @@ public class AiAdminClientToolMcpController {
     @RequestMapping(value = "addMcp", method = RequestMethod.POST)
     public ResponseEntity<Boolean> addMcp(@RequestBody AiClientToolMcp aiClientToolMcp) {
         try {
+            // 参数校验与默认值
+            if (aiClientToolMcp == null) {
+                return ResponseEntity.badRequest().build();
+            }
+            if (aiClientToolMcp.getMcpId() == null || aiClientToolMcp.getMcpId().trim().isEmpty()) {
+                return ResponseEntity.badRequest().build();
+            }
+            if (aiClientToolMcp.getMcpName() == null || aiClientToolMcp.getMcpName().trim().isEmpty()) {
+                return ResponseEntity.badRequest().build();
+            }
+            if (aiClientToolMcp.getTransportType() == null || aiClientToolMcp.getTransportType().trim().isEmpty()) {
+                aiClientToolMcp.setTransportType("stdio");
+            }
+            if (aiClientToolMcp.getRequestTimeout() == null) {
+                aiClientToolMcp.setRequestTimeout(180);
+            }
+            if (aiClientToolMcp.getStatus() == null) {
+                aiClientToolMcp.setStatus(1);
+            }
             aiClientToolMcp.setCreateTime(LocalDateTime.now());
             aiClientToolMcp.setUpdateTime(LocalDateTime.now());
             int count = aiClientToolMcpDao.insert(aiClientToolMcp);

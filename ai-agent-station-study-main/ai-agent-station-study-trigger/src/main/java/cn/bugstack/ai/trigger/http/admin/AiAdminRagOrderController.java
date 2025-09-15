@@ -71,6 +71,23 @@ public class AiAdminRagOrderController {
     }
 
     /**
+     * 根据主键ID查询RAG订单详情 (GET 方法)
+     *
+     * @param id 主键ID
+     * @return RAG订单详情
+     */
+    @RequestMapping(value = "queryRagOrderById", method = RequestMethod.GET)
+    public ResponseEntity<AiClientRagOrder> queryRagOrderById(@RequestParam("id") Long id) {
+        try {
+            AiClientRagOrder ragOrder = aiClientRagOrderDao.queryById(id);
+            return ResponseEntity.ok(ragOrder);
+        } catch (Exception e) {
+            log.error("根据主键ID查询RAG订单详情异常", e);
+            return ResponseEntity.status(500).build();
+        }
+    }
+
+    /**
      * 新增RAG订单
      *
      * @param aiRagOrder RAG订单
@@ -98,6 +115,10 @@ public class AiAdminRagOrderController {
     @RequestMapping(value = "updateRagOrder", method = RequestMethod.POST)
     public ResponseEntity<Boolean> updateRagOrder(@RequestBody AiClientRagOrder aiClientRagOrder) {
         try {
+            if (aiClientRagOrder == null || aiClientRagOrder.getId() == null) {
+                log.warn("更新RAG订单缺少必要参数 id，入参: {}", aiClientRagOrder);
+                return ResponseEntity.badRequest().build();
+            }
             aiClientRagOrder.setUpdateTime(LocalDateTime.now());
             int count = aiClientRagOrderDao.updateById(aiClientRagOrder);
             return ResponseEntity.ok(count > 0);

@@ -54,6 +54,23 @@ public class AiAdminClientSystemPromptController {
     }
 
     /**
+     * 根据主键ID查询系统提示词详情 (GET 方法)
+     *
+     * @param id 主键ID
+     * @return 系统提示词详情
+     */
+    @RequestMapping(value = "querySystemPromptById", method = RequestMethod.GET)
+    public ResponseEntity<AiClientSystemPrompt> querySystemPromptById(@RequestParam("id") Long id) {
+        try {
+            AiClientSystemPrompt prompt = aiClientSystemPromptDao.queryById(id);
+            return ResponseEntity.ok(prompt);
+        } catch (Exception e) {
+            log.error("根据主键ID查询系统提示词详情异常", e);
+            return ResponseEntity.status(500).build();
+        }
+    }
+
+    /**
      * 新增系统提示词
      *
      * @param aiClientSystemPromptConfig 系统提示词
@@ -78,7 +95,7 @@ public class AiAdminClientSystemPromptController {
      * @param aiClientSystemPromptConfig 系统提示词
      * @return 结果
      */
-    @RequestMapping(value = "updateSystemPromptConfig", method = RequestMethod.POST)
+    @RequestMapping(value = {"updateSystemPromptConfig", "updateSystemPrompt"}, method = RequestMethod.POST)
     public ResponseEntity<Boolean> updateSystemPromptConfig(@RequestBody AiClientSystemPrompt aiClientSystemPrompt) {
         try {
             aiClientSystemPrompt.setUpdateTime(LocalDateTime.now());
