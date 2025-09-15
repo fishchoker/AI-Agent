@@ -86,6 +86,29 @@ public class AiAdminClientAdvisorConfigController {
     @RequestMapping(value = "addClientAdvisorConfig", method = RequestMethod.POST)
     public ResponseEntity<Boolean> addClientAdvisorConfig(@RequestBody AiClientAdvisor aiClientAdvisor) {
         try {
+            // 校验与默认值，避免必填列为 null 触发 500
+            if (aiClientAdvisor == null) {
+                return ResponseEntity.badRequest().build();
+            }
+            if (aiClientAdvisor.getAdvisorId() == null || aiClientAdvisor.getAdvisorId().trim().isEmpty()) {
+                return ResponseEntity.badRequest().build();
+            }
+            if (aiClientAdvisor.getAdvisorName() == null || aiClientAdvisor.getAdvisorName().trim().isEmpty()) {
+                return ResponseEntity.badRequest().build();
+            }
+            if (aiClientAdvisor.getAdvisorType() == null || aiClientAdvisor.getAdvisorType().trim().isEmpty()) {
+                aiClientAdvisor.setAdvisorType("RagAnswer");
+            }
+            if (aiClientAdvisor.getOrderNum() == null) {
+                aiClientAdvisor.setOrderNum(0);
+            }
+            if (aiClientAdvisor.getStatus() == null) {
+                aiClientAdvisor.setStatus(1);
+            }
+            if (aiClientAdvisor.getExtParam() == null || aiClientAdvisor.getExtParam().trim().isEmpty()) {
+                aiClientAdvisor.setExtParam("{}");
+            }
+
             aiClientAdvisor.setCreateTime(LocalDateTime.now());
             aiClientAdvisor.setUpdateTime(LocalDateTime.now());
             int count = aiClientAdvisorDao.insert(aiClientAdvisor);
@@ -150,6 +173,7 @@ public class AiAdminClientAdvisorConfigController {
                     .filter(cfg -> filterAdvisorId == null || filterAdvisorId.equals(String.valueOf(cfg.getTargetId())))
                     .map(cfg -> {
                         Map<String, Object> m = new HashMap<>();
+                        m.put("id", cfg.getId());
                         m.put("clientId", String.valueOf(cfg.getSourceId()));
                         m.put("advisorId", String.valueOf(cfg.getTargetId()));
                         m.put("status", cfg.getStatus());

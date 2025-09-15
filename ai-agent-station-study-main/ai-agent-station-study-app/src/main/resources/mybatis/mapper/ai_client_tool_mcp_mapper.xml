@@ -23,25 +23,29 @@
     </insert>
 
     <update id="updateById" parameterType="cn.bugstack.ai.infrastructure.dao.po.AiClientToolMcp">
-        UPDATE ai_client_tool_mcp SET
-            mcp_id = #{mcpId},
-            mcp_name = #{mcpName},
-            transport_type = #{transportType},
-            transport_config = #{transportConfig},
-            request_timeout = #{requestTimeout},
-            status = #{status},
+        UPDATE ai_client_tool_mcp
+        <set>
+            <if test="mcpId != null">mcp_id = #{mcpId},</if>
+            <if test="mcpName != null">mcp_name = #{mcpName},</if>
+            <if test="transportType != null">transport_type = #{transportType},</if>
+            <if test="transportConfig != null">transport_config = #{transportConfig},</if>
+            <if test="requestTimeout != null">request_timeout = #{requestTimeout},</if>
+            <if test="status != null">status = #{status},</if>
             update_time = #{updateTime}
+        </set>
         WHERE id = #{id}
     </update>
 
     <update id="updateByMcpId" parameterType="cn.bugstack.ai.infrastructure.dao.po.AiClientToolMcp">
-        UPDATE ai_client_tool_mcp SET
-            mcp_name = #{mcpName},
-            transport_type = #{transportType},
-            transport_config = #{transportConfig},
-            request_timeout = #{requestTimeout},
-            status = #{status},
+        UPDATE ai_client_tool_mcp
+        <set>
+            <if test="mcpName != null">mcp_name = #{mcpName},</if>
+            <if test="transportType != null">transport_type = #{transportType},</if>
+            <if test="transportConfig != null">transport_config = #{transportConfig},</if>
+            <if test="requestTimeout != null">request_timeout = #{requestTimeout},</if>
+            <if test="status != null">status = #{status},</if>
             update_time = #{updateTime}
+        </set>
         WHERE mcp_id = #{mcpId}
     </update>
 

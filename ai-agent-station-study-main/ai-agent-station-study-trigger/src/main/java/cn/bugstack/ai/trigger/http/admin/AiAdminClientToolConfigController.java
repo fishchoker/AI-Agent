@@ -1,6 +1,8 @@
 package cn.bugstack.ai.trigger.http.admin;
 
+import cn.bugstack.ai.infrastructure.dao.IAiClientConfigDao;
 import cn.bugstack.ai.infrastructure.dao.IAiClientToolMcpDao;
+import cn.bugstack.ai.infrastructure.dao.po.AiClientConfig;
 import cn.bugstack.ai.infrastructure.dao.po.AiClientToolMcp;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -11,7 +13,11 @@ import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.annotation.Resource;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * AI客户端工具配置控制器
@@ -26,6 +32,9 @@ public class AiAdminClientToolConfigController {
     @Resource
     private IAiClientToolMcpDao aiClientToolMcpDao;
 
+    @Resource
+    private IAiClientConfigDao aiClientConfigDao;
+
     /**
      * 查询客户端工具配置列表
      *
@@ -33,10 +42,33 @@ public class AiAdminClientToolConfigController {
      * @return 工具配置列表
      */
     @RequestMapping(value = "queryClientToolConfigList", method = RequestMethod.POST)
-    public ResponseEntity<List<AiClientToolMcp>> queryClientToolConfigList(@RequestBody AiClientToolMcp aiClientToolMcp) {
+    public ResponseEntity<List<Map<String, Object>>> queryClientToolConfigList(@RequestBody(required = false) Map<String, Object> request) {
         try {
-            List<AiClientToolMcp> configList = aiClientToolMcpDao.queryAll();
-            return ResponseEntity.ok(configList);
+            String filterClientId = request != null && request.get("clientId") != null ? String.valueOf(request.get("clientId")) : null;
+            String filterToolId = request != null && request.get("toolId") != null ? String.valueOf(request.get("toolId")) : null;
+            // 可接收 pageNum/pageSize/searchType/searchValue，但当前不分页
+
+            List<AiClientConfig> allConfigs = aiClientConfigDao.queryAll();
+
+            List<Map<String, Object>> rows = allConfigs.stream()
+                    .filter(Objects::nonNull)
+                    .filter(cfg -> "tool_mcp".equalsIgnoreCase(cfg.getTargetType()))
+                    .filter(cfg -> filterClientId == null || filterClientId.equals(String.valueOf(cfg.getSourceId())))
+                    .filter(cfg -> filterToolId == null || filterToolId.equals(String.valueOf(cfg.getTargetId())))
+                    .map(cfg -> {
+                        Map<String, Object> m = new HashMap<>();
+                        m.put("configId", cfg.getId());
+                        m.put("clientId", String.valueOf(cfg.getSourceId()));
+                        m.put("targetType", "tool_mcp");
+                        m.put("toolId", String.valueOf(cfg.getTargetId()));
+                        m.put("status", cfg.getStatus());
+                        m.put("createTime", cfg.getCreateTime());
+                        m.put("updateTime", cfg.getUpdateTime());
+                        return m;
+                    })
+                    .collect(Collectors.toList());
+
+            return ResponseEntity.ok(rows);
         } catch (Exception e) {
             log.error("查询客户端工具配置列表异常", e);
             return ResponseEntity.status(500).build();
