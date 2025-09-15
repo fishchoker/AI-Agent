@@ -28,26 +28,24 @@ public class AiAgentConfig {
      * <p>
      * SELECT * FROM vector_store_openai
      */
-	/*
-	 * @Bean("vectorStore")
-	 * 
-	 * @ConditionalOnBean(name = "pgVectorJdbcTemplate") public PgVectorStore
-	 * pgVectorStore(@Value("${spring.ai.openai.base-url}") String baseUrl,
-	 * 
-	 * @Value("${spring.ai.openai.api-key}") String apiKey,
-	 * 
-	 * @Value("${spring.ai.openai.embeddings-path:/v4/embeddings}") String
-	 * embeddingsPath,
-	 * 
-	 * @Qualifier("pgVectorJdbcTemplate") JdbcTemplate jdbcTemplate) {
-	 * 
-	 * OpenAiApi openAiApi = OpenAiApi.builder() .baseUrl(baseUrl) .apiKey(apiKey)
-	 * .embeddingsPath(embeddingsPath) .build();
-	 * 
-	 * OpenAiEmbeddingModel embeddingModel = new OpenAiEmbeddingModel(openAiApi);
-	 * return PgVectorStore.builder(jdbcTemplate, embeddingModel)
-	 * .vectorTableName("vector_store_openai") .build(); }
-	 */
+    @Bean("vectorStore")
+    @ConditionalOnBean(name = "pgVectorJdbcTemplate")
+    public PgVectorStore pgVectorStore(@Value("${spring.ai.openai.base-url}") String baseUrl,
+                                       @Value("${spring.ai.openai.api-key}") String apiKey,
+                                       @Value("${spring.ai.openai.embeddings-path:/v4/embeddings}") String embeddingsPath,
+                                       @Qualifier("pgVectorJdbcTemplate") JdbcTemplate jdbcTemplate) {
+
+        OpenAiApi openAiApi = OpenAiApi.builder()
+                .baseUrl(baseUrl)
+                .apiKey(apiKey)
+                .embeddingsPath(embeddingsPath)
+                .build();
+
+        OpenAiEmbeddingModel embeddingModel = new OpenAiEmbeddingModel(openAiApi);
+        return PgVectorStore.builder(jdbcTemplate, embeddingModel)
+                .vectorTableName("vector_store_openai")
+                .build();
+    }
 
     @Bean
     public TokenTextSplitter tokenTextSplitter() {

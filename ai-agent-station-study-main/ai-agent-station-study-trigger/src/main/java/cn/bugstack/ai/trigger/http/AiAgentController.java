@@ -21,7 +21,7 @@ import java.util.concurrent.ThreadPoolExecutor;
  */
 @Slf4j
 @RestController
-@RequestMapping("/api/v1/agent")
+@RequestMapping("/ai/agent")  // 修改 base path 为 /ai/agent
 @CrossOrigin(origins = "*", allowedHeaders = "*", methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.OPTIONS})
 public class AiAgentController implements IAiAgentService {
 
@@ -34,63 +34,59 @@ public class AiAgentController implements IAiAgentService {
     @Resource
     private IAgentDispatchService agentDispatchService;
 
-    @RequestMapping(value = "auto_agent", method = RequestMethod.POST)
+    /**
+     * SSE 流式接口
+     */
+    @PostMapping("/chat_stream")  // 修改方法路径为 chat_stream
     public ResponseBodyEmitter autoAgent(@RequestBody AutoAgentRequestDTO request, HttpServletResponse response) {
-        log.info("AutoAgent流式执行请求开始，请求信息：{}", JSON.toJSONString(request));
+        log.info("🔔 AutoAgent流式执行请求开始，请求信息：{}", JSON.toJSONString(request));
         
-        try {
-            // 设置SSE响应头
-            response.setContentType("text/event-stream");
-            response.setCharacterEncoding("UTF-8");
-            response.setHeader("Cache-Control", "no-cache");
-            response.setHeader("Connection", "keep-alive");
+        // 设置 SSE 头
+        response.setContentType("text/event-stream");
+        response.setCharacterEncoding("UTF-8");
+        response.setHeader("Cache-Control", "no-cache");
+        response.setHeader("Connection", "keep-alive");
 
-            // 1. 创建流式输出对象
-            ResponseBodyEmitter emitter = new ResponseBodyEmitter(Long.MAX_VALUE);
-            
-            // 2. 构建执行命令实体
+        // 创建 ResponseBodyEmitter
+        ResponseBodyEmitter emitter = new ResponseBodyEmitter(Long.MAX_VALUE);
+
+        try {
+            // 构建执行命令实体
             ExecuteCommandEntity executeCommandEntity = ExecuteCommandEntity.builder()
                     .aiAgentId(request.getAiAgentId())
                     .message(request.getMessage())
                     .sessionId(request.getSessionId())
                     .maxStep(request.getMaxStep())
                     .build();
-            
-            // 3. 调度处理
-            agentDispatchService.dispatch(executeCommandEntity, emitter);
-            
-            return emitter;
+
+            // 异步执行
+            threadPoolExecutor.submit(() -> {
+                try {
+                    agentDispatchService.dispatch(executeCommandEntity, emitter);
+                    emitter.complete();  // 完成流
+                } catch (Exception e) {
+                    log.error("AutoAgent 执行异常：{}", e.getMessage(), e);
+                    try {
+                        emitter.send("执行异常：" + e.getMessage());
+                        emitter.complete();
+                    } catch (Exception ex) {
+                        log.error("发送异常信息失败：{}", ex.getMessage(), ex);
+                    }
+                }
+            });
 
         } catch (Exception e) {
-            log.error("AutoAgent请求处理异常：{}", e.getMessage(), e);
-            ResponseBodyEmitter errorEmitter = new ResponseBodyEmitter();
+            log.error("AutoAgent 请求处理异常：{}", e.getMessage(), e);
             try {
-                errorEmitter.send("请求处理异常：" + e.getMessage());
-                errorEmitter.complete();
+                emitter.send("请求处理异常：" + e.getMessage());
+                emitter.complete();
             } catch (Exception ex) {
-                log.error("发送错误信息失败：{}", ex.getMessage(), ex);
+                log.error("发送异常信息失败：{}", ex.getMessage(), ex);
             }
-            return errorEmitter;
         }
+
+        return emitter;
     }
 
-    /**
-     * 快速测试向量模型接口
-     */
-    @RequestMapping(value = "test_vector_model", method = RequestMethod.GET)
-    public String testVectorModel() {
-        try {
-            log.info("=== 测试向量模型接口 ===");
-            
-            // 这里可以注入PgVectorStore进行测试
-            // 或者调用相关的服务进行测试
-            
-            return "向量模型测试接口调用成功！请查看日志了解详细结果。";
-            
-        } catch (Exception e) {
-            log.error("向量模型测试失败", e);
-            return "向量模型测试失败：" + e.getMessage();
-        }
-    }
 
 }

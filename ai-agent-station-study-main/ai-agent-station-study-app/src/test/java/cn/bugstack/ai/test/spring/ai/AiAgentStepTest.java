@@ -38,16 +38,16 @@ public class AiAgentStepTest {
     public void init() {
 
         OpenAiApi openAiApi = OpenAiApi.builder()
-                .baseUrl("https://apis.itedus.cn")
-                .apiKey("sk-k6dvxKUVTtjuRquKF6B1E15574794cF9B6006b9cA61bBaD2")
-                .completionsPath("v1/chat/completions")
-                .embeddingsPath("v1/embeddings")
+                .baseUrl("https://open.bigmodel.cn/api/paas/")
+                .apiKey("sk-c259c3bbdeb449e7b0673c8f393006ab.iPaHfYyhLddTiOw5")
+                .completionsPath("v4/chat/completions")
+                .embeddingsPath("v4/embeddings")
                 .build();
 
         chatModel = OpenAiChatModel.builder()
                 .openAiApi(openAiApi)
                 .defaultOptions(OpenAiChatOptions.builder()
-                        .model("gpt-4.1-mini")
+                        .model("glm-4.5")
                         .toolCallbacks(new SyncMcpToolCallbackProvider(stdioMcpClientElasticsearch2()).getToolCallbacks())
                         .build())
                 .build();
@@ -61,12 +61,13 @@ public class AiAgentStepTest {
     public McpSyncClient stdioMcpClientElasticsearch() {
 
         Map<String, String> env = new HashMap<>();
-        env.put("ES_URL", "http://192.168.1.108:9200");
+        env.put("ES_URL", "http://localhost:9200");
         env.put("ES_API_KEY", "none");
         env.put("OTEL_SDK_DISABLED", "true");
         env.put("NODE_OPTIONS", "--no-warnings");
-
-        var stdioParams = ServerParameters.builder("npx")
+        
+        String npxPath = "\"C:\\Program Files\\nodejs\\npx.cmd\"";
+        var stdioParams = ServerParameters.builder(npxPath)
                 .args("-y", "@elastic/mcp-server-elasticsearch")
                 .env(env)
                 .build();
@@ -84,13 +85,14 @@ public class AiAgentStepTest {
 
     public McpSyncClient stdioMcpClientElasticsearch2() {
         Map<String, String> env = new HashMap<>();
-        env.put("ES_HOST", "http://192.168.1.110:9200");
+        env.put("ES_HOST", "http://localhost:9200");
         env.put("ES_API_KEY", "none");
         // 禁用OpenTelemetry以避免日志干扰JSON-RPC通信
 //        env.put("OTEL_SDK_DISABLED", "true");
 //        env.put("NODE_OPTIONS", "--no-warnings");
 
-        var stdioParams = ServerParameters.builder("npx")
+        String npxPath = "\"C:\\Program Files\\nodejs\\npx.cmd\"";
+        var stdioParams = ServerParameters.builder(npxPath)
                 .args("-y", "@awesome-ai/elasticsearch-mcp")
                 .env(env)
                 .build();
