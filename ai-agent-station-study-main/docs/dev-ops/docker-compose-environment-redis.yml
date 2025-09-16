@@ -2,28 +2,28 @@
 # docker 代理和使用文档；https://bugstack.cn/md/road-map/docker.html
 version: '3.9'
 services:
- vector_db:
-    image: registry.cn-hangzhou.aliyuncs.com/xfg-studio/pgvector:v0.5.0
+  vector_db:
+    image: pgvector/pgvector:0.6.0-pg15   # 推荐最新的pgvector镜像
     container_name: vector_db
     restart: always
     environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=ai-rag-knowledge
-      - PGPASSWORD=postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ai-rag-knowledge   # 你之前的 springai 改成新的库名
     volumes:
-      - ./pgvector/sql/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./pgvector/data:/var/lib/postgresql/data   # 数据卷目录，防止丢数据
+      - ./pgvector/sql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d ai-rag-knowledge"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     logging:
       options:
-        max-size: 10m
+        max-size: "10m"
         max-file: "3"
-    ports:
-      - '15432:5432'
-    healthcheck:
-      test: "pg_isready -U postgres -d ai-rag-knowledge"
-      interval: 2s
-      timeout: 20s
-      retries: 10
     networks:
       - my-network
 

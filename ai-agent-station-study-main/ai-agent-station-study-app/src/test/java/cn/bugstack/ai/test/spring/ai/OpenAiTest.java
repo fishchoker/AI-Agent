@@ -37,6 +37,8 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.stream.Collectors;
 
+import org.springframework.jdbc.core.JdbcTemplate;
+
 @Slf4j
 @RunWith(SpringRunner.class)
 @SpringBootTest
@@ -51,19 +53,25 @@ public class OpenAiTest {
     @Value("classpath:data/article-prompt-words.txt")
     private Resource articlePromptWordsResource;
 
-    @Value("classpath:data/grafana-mcp-tools-guide.md")
-    private Resource grafanaMcpToolsGuideResource;
+	/*
+	 * @Value("classpath:data/grafana-mcp-tools-guide.md") private Resource
+	 * grafanaMcpToolsGuideResource;
+	 */
 
 	/*
 	 * @Autowired private OpenAiChatModel openAiChatModel;
 	 */
     @Autowired
-    @Qualifier("ai_client_model_2001")
+    @Qualifier("ai_client_model_3001")
     private OpenAiChatModel chatModel;
     
     @Autowired
     @Qualifier("vectorStore")
     private PgVectorStore pgVectorStore;
+    
+    @Autowired
+    @Qualifier("pgVectorJdbcTemplate")
+    private JdbcTemplate jdbcTemplate;
 
     private final TokenTextSplitter tokenTextSplitter = new TokenTextSplitter();
     
@@ -71,26 +79,29 @@ public class OpenAiTest {
 
 	
 	
-	  @Test public void test_call() { //此处的model需要根据bean名称去拿，才能拿到自定义的model
-	  //OpenAiChatModel chatModel = getBean("ai_client_model_2001"); 
-		  ChatResponse
-	  response = chatModel.call(new Prompt( "1+1", OpenAiChatOptions.builder()
-	  .model("glm-4.5") .build())); log.info("测试结果(call):{}",
-	  JSON.toJSONString(response)); }
+	/*
+	 * @Test public void test_call() { //此处的model需要根据bean名称去拿，才能拿到自定义的model
+	 * //OpenAiChatModel chatModel = getBean("ai_client_model_2001"); ChatResponse
+	 * response = chatModel.call(new Prompt( "1+1", OpenAiChatOptions.builder()
+	 * .model("glm-4.5") .build())); log.info("测试结果(call):{}",
+	 * JSON.toJSONString(response)); }
+	 */
 	 
 	 
 
 	
-	  @Test public void test_call_images() { UserMessage userMessage =
-	  UserMessage.builder() .text("请描述这张图片的主要内容，并说明图中物品的可能用途。")
-	  .media(org.springframework.ai.content.Media.builder()
-	  .mimeType(MimeType.valueOf(MimeTypeUtils.IMAGE_PNG_VALUE))
-	  .data(imageResource) .build()) .build();
-	  
-	  ChatResponse response = chatModel.call(new Prompt( userMessage,
-	  OpenAiChatOptions.builder() .model("glm-4.5V") .build()));
-	  
-	  log.info("测试结果(images):{}", JSON.toJSONString(response)); }
+	/*
+	 * @Test public void test_call_images() { UserMessage userMessage =
+	 * UserMessage.builder() .text("请描述这张图片的主要内容，并说明图中物品的可能用途。")
+	 * .media(org.springframework.ai.content.Media.builder()
+	 * .mimeType(MimeType.valueOf(MimeTypeUtils.IMAGE_PNG_VALUE))
+	 * .data(imageResource) .build()) .build();
+	 * 
+	 * ChatResponse response = chatModel.call(new Prompt( userMessage,
+	 * OpenAiChatOptions.builder() .model("glm-4.5V") .build()));
+	 * 
+	 * log.info("测试结果(images):{}", JSON.toJSONString(response)); }
+	 */
 	 
 
 	/*
@@ -111,7 +122,7 @@ public class OpenAiTest {
     @Test
     public void upload() {
         // textResource、articlePromptWordsResource
-        TikaDocumentReader reader = new TikaDocumentReader(grafanaMcpToolsGuideResource);
+        TikaDocumentReader reader = new TikaDocumentReader(textResource);
 
         List<Document> documents = reader.get();
         List<Document> documentSplitterList = tokenTextSplitter.apply(documents);
@@ -121,6 +132,19 @@ public class OpenAiTest {
         pgVectorStore.accept(documentSplitterList);
 
         log.info("上传完成");
+        // -----------------------
+        // 打印 vector_store_openai 表内容
+        // -----------------------
+        List<Map<String, Object>> rows = jdbcTemplate.queryForList("SELECT id, content, metadata, embedding FROM vector_store_openai LIMIT 10");
+
+        log.info("打印 vector_store_openai 前 10 条记录：");
+        for (Map<String, Object> row : rows) {
+            log.info("id: {}, content: {}, metadata: {}, embedding: {}", 
+                     row.get("id"), 
+                     row.get("content"), 
+                     row.get("metadata"), 
+                     row.get("embedding"));
+        }
     }
 
     @Test

@@ -33,20 +33,21 @@ public class AiSearchMCPTest {
 
     @Test
     public void test() {
+
         OpenAiChatModel chatModel = OpenAiChatModel.builder()
                 .openAiApi(OpenAiApi.builder()
-                        .baseUrl("https://apis.itedus.cn")
-                        .apiKey("sk-sLvFUs1wSIgtbWcE03464f199d254cFcA3A5F2A353C8EdDe")
-                        .completionsPath("v1/chat/completions")
-                        .embeddingsPath("v1/embeddings")
+                        .baseUrl("https://open.bigmodel.cn/api/paas/")
+                        .apiKey("sk-c259c3bbdeb449e7b0673c8f393006ab.iPaHfYyhLddTiOw5")
+                        .completionsPath("v4/chat/completions")
+                        .embeddingsPath("v4/embeddings")
                         .build())
                 .defaultOptions(OpenAiChatOptions.builder()
-                        .model("gpt-4.1")
+                        .model("glm-4.5")
                         .toolCallbacks(new SyncMcpToolCallbackProvider(sseMcpClient()).getToolCallbacks())
                         .build())
                 .build();
 
-        ChatResponse call = chatModel.call(Prompt.builder().messages(new UserMessage("搜索小傅哥技术博客有哪些项目")).build());
+        ChatResponse call = chatModel.call(Prompt.builder().messages(new UserMessage("搜索东南大学的背景")).build());
         log.info("测试结果:{}", JSON.toJSONString(call.getResult()));
     }
 
