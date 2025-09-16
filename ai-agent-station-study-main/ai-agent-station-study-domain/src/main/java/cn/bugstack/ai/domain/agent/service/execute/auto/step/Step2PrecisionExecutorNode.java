@@ -138,6 +138,9 @@ public class Step2PrecisionExecutorNode extends AbstractExecuteSupport{
         
         // 发送最后一个section的内容
         sendExecutionSubResult(dynamicContext, currentSection, sectionContent.toString(), sessionId);
+        
+        // 额外发送完整的执行结果，确保所有内容都被推送
+        sendCompleteExecutionResult(dynamicContext, executionResult, sessionId);
     }
     
     /**
@@ -151,6 +154,16 @@ public class Step2PrecisionExecutorNode extends AbstractExecuteSupport{
                     dynamicContext.getStep(), subType, content, sessionId);
             sendSseResult(dynamicContext, result);
         }
+    }
+    
+    /**
+     * 发送完整的执行结果到流式输出
+     */
+    private void sendCompleteExecutionResult(DefaultAutoAgentExecuteStrategyFactory.DynamicContext dynamicContext, 
+                                            String executionResult, String sessionId) {
+        AutoAgentExecuteResultEntity result = AutoAgentExecuteResultEntity.createExecutionResult(
+                dynamicContext.getStep(), executionResult, sessionId);
+        sendSseResult(dynamicContext, result);
     }
     
 }

@@ -3,9 +3,11 @@ package cn.bugstack.ai.trigger.http.admin;
 import cn.bugstack.ai.infrastructure.dao.IAiAgentDao;
 import cn.bugstack.ai.infrastructure.dao.IAiAgentTaskScheduleDao;
 import cn.bugstack.ai.infrastructure.dao.IAiClientDao;
+import cn.bugstack.ai.infrastructure.dao.IAiAgentFlowConfigDao;
 import cn.bugstack.ai.infrastructure.dao.po.AiAgent;
 import cn.bugstack.ai.infrastructure.dao.po.AiAgentTaskSchedule;
 import cn.bugstack.ai.infrastructure.dao.po.AiClient;
+import cn.bugstack.ai.infrastructure.dao.po.AiAgentFlowConfig;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -35,6 +37,9 @@ public class AiAdminAgentController {
 
     @Resource
     private IAiClientDao aiClientDao;
+
+    @Resource
+    private IAiAgentFlowConfigDao aiAgentFlowConfigDao;
 
     /**
      * 分页查询AI代理列表
@@ -330,28 +335,52 @@ public class AiAdminAgentController {
     }
 
     /**
-     * 查询客户端列表
+     * 查询智能体客户端流程配置列表
      *
      * @param request 查询条件
-     * @return 客户端列表
+     * @return 智能体客户端流程配置列表
      */
     @RequestMapping(value = "client/queryAgentClientList", method = RequestMethod.POST)
-    public ResponseEntity<List<AiClient>> queryAgentClientList(@RequestBody Map<String, Object> request) {
+    public ResponseEntity<List<AiAgentFlowConfig>> queryAgentClientList(@RequestBody Map<String, Object> request) {
         try {
-            List<AiClient> clientList;
+            List<AiAgentFlowConfig> flowConfigList;
             
-            // 如果传入了clientName，则根据clientName查询
-            if (request.containsKey("clientName") && request.get("clientName") != null) {
+            // 如果传入了agentId，则根据agentId查询
+            if (request.containsKey("agentId") && request.get("agentId") != null) {
+                String agentId = request.get("agentId").toString();
+                flowConfigList = aiAgentFlowConfigDao.queryByAgentId(agentId);
+            } 
+            // 如果传入了clientId，则根据clientId查询
+            else if (request.containsKey("clientId") && request.get("clientId") != null) {
+                String clientId = request.get("clientId").toString();
+                flowConfigList = aiAgentFlowConfigDao.queryByClientId(clientId);
+            }
+            // 如果传入了clientName，则根据clientName查询（模糊匹配）
+            else if (request.containsKey("clientName") && request.get("clientName") != null) {
                 String clientName = request.get("clientName").toString();
-                clientList = aiClientDao.queryByClientName(clientName);
-            } else {
-                // 否则查询所有客户端
-                clientList = aiClientDao.queryAll();
+                // 先查询所有配置，然后过滤包含指定clientName的记录
+                List<AiAgentFlowConfig> allConfigs = aiAgentFlowConfigDao.queryAll();
+                flowConfigList = allConfigs.stream()
+                    .filter(config -> config.getClientName() != null && 
+                            config.getClientName().contains(clientName))
+                    .collect(java.util.stream.Collectors.toList());
+            }
+            // 如果传入了agentId和clientId，则精确查询
+            else if (request.containsKey("agentId") && request.containsKey("clientId") 
+                    && request.get("agentId") != null && request.get("clientId") != null) {
+                String agentId = request.get("agentId").toString();
+                String clientId = request.get("clientId").toString();
+                AiAgentFlowConfig flowConfig = aiAgentFlowConfigDao.queryByAgentIdAndClientId(agentId, clientId);
+                flowConfigList = flowConfig != null ? List.of(flowConfig) : List.of();
+            }
+            // 否则查询所有流程配置
+            else {
+                flowConfigList = aiAgentFlowConfigDao.queryAll();
             }
             
-            return ResponseEntity.ok(clientList);
+            return ResponseEntity.ok(flowConfigList);
         } catch (Exception e) {
-            log.error("查询客户端列表异常", e);
+            log.error("查询智能体客户端流程配置列表异常", e);
             return ResponseEntity.status(500).build();
         }
     }
@@ -427,6 +456,24 @@ public class AiAdminAgentController {
     }
 
     /**
+     * 新增智能体客户端流程配置
+     *
+     * @param flowConfig 智能体客户端流程配置
+     * @return 结果
+     */
+    @RequestMapping(value = "client/addAgentClient", method = RequestMethod.POST)
+    public ResponseEntity<Boolean> addAgentClient(@RequestBody AiAgentFlowConfig flowConfig) {
+        try {
+            flowConfig.setCreateTime(LocalDateTime.now());
+            int count = aiAgentFlowConfigDao.insert(flowConfig);
+            return ResponseEntity.ok(count > 0);
+        } catch (Exception e) {
+            log.error("新增智能体客户端流程配置异常", e);
+            return ResponseEntity.status(500).build();
+        }
+    }
+
+    /**
      * 更新客户端
      *
      * @param client 客户端配置
@@ -458,6 +505,155 @@ public class AiAdminAgentController {
             return ResponseEntity.ok(count > 0);
         } catch (Exception e) {
             log.error("删除客户端异常", e);
+            return ResponseEntity.status(500).build();
+        }
+    }
+
+    // ==================== AI Agent Flow Config 相关接口 ====================
+
+    /**
+     * 查询智能体流程配置列表
+     *
+     * @param request 查询条件
+     * @return 流程配置列表
+     */
+    @RequestMapping(value = "flow/queryAgentFlowConfigList", method = RequestMethod.POST)
+    public ResponseEntity<List<AiAgentFlowConfig>> queryAgentFlowConfigList(@RequestBody Map<String, Object> request) {
+        try {
+            List<AiAgentFlowConfig> flowConfigs;
+            
+            // 如果传入了agentId，则根据agentId查询
+            if (request.containsKey("agentId") && request.get("agentId") != null) {
+                String agentId = request.get("agentId").toString();
+                flowConfigs = aiAgentFlowConfigDao.queryByAgentId(agentId);
+            } 
+            // 如果传入了clientId，则根据clientId查询
+            else if (request.containsKey("clientId") && request.get("clientId") != null) {
+                String clientId = request.get("clientId").toString();
+                flowConfigs = aiAgentFlowConfigDao.queryByClientId(clientId);
+            }
+            // 如果传入了agentId和clientId，则精确查询
+            else if (request.containsKey("agentId") && request.containsKey("clientId") 
+                    && request.get("agentId") != null && request.get("clientId") != null) {
+                String agentId = request.get("agentId").toString();
+                String clientId = request.get("clientId").toString();
+                AiAgentFlowConfig flowConfig = aiAgentFlowConfigDao.queryByAgentIdAndClientId(agentId, clientId);
+                flowConfigs = flowConfig != null ? List.of(flowConfig) : List.of();
+            }
+            // 否则查询所有流程配置
+            else {
+                flowConfigs = aiAgentFlowConfigDao.queryAll();
+            }
+            
+            return ResponseEntity.ok(flowConfigs);
+        } catch (Exception e) {
+            log.error("查询智能体流程配置列表异常", e);
+            return ResponseEntity.status(500).build();
+        }
+    }
+
+    /**
+     * 根据ID查询智能体流程配置详情
+     *
+     * @param request 包含配置ID的请求
+     * @return 流程配置详情
+     */
+    @RequestMapping(value = "flow/queryAgentFlowConfigDetail", method = RequestMethod.POST)
+    public ResponseEntity<AiAgentFlowConfig> queryAgentFlowConfigDetail(@RequestBody Map<String, Object> request) {
+        try {
+            String id = request.get("id").toString();
+            AiAgentFlowConfig flowConfig = aiAgentFlowConfigDao.queryById(id);
+            return ResponseEntity.ok(flowConfig);
+        } catch (Exception e) {
+            log.error("查询智能体流程配置详情异常", e);
+            return ResponseEntity.status(500).build();
+        }
+    }
+
+    /**
+     * 根据ID查询智能体流程配置详情 (GET方法)
+     *
+     * @param id 配置ID
+     * @return 流程配置详情
+     */
+    @RequestMapping(value = "flow/queryAgentFlowConfigById", method = RequestMethod.GET)
+    public ResponseEntity<AiAgentFlowConfig> queryAgentFlowConfigById(@RequestParam("id") String id) {
+        try {
+            AiAgentFlowConfig flowConfig = aiAgentFlowConfigDao.queryById(id);
+            return ResponseEntity.ok(flowConfig);
+        } catch (Exception e) {
+            log.error("根据ID查询智能体流程配置详情异常", e);
+            return ResponseEntity.status(500).build();
+        }
+    }
+
+    /**
+     * 新增智能体流程配置
+     *
+     * @param flowConfig 流程配置
+     * @return 结果
+     */
+    @RequestMapping(value = "flow/addAgentFlowConfig", method = RequestMethod.POST)
+    public ResponseEntity<Boolean> addAgentFlowConfig(@RequestBody AiAgentFlowConfig flowConfig) {
+        try {
+            flowConfig.setCreateTime(LocalDateTime.now());
+            int count = aiAgentFlowConfigDao.insert(flowConfig);
+            return ResponseEntity.ok(count > 0);
+        } catch (Exception e) {
+            log.error("新增智能体流程配置异常", e);
+            return ResponseEntity.status(500).build();
+        }
+    }
+
+    /**
+     * 更新智能体流程配置
+     *
+     * @param flowConfig 流程配置
+     * @return 结果
+     */
+    @RequestMapping(value = "flow/updateAgentFlowConfig", method = RequestMethod.POST)
+    public ResponseEntity<Boolean> updateAgentFlowConfig(@RequestBody AiAgentFlowConfig flowConfig) {
+        try {
+            int count = aiAgentFlowConfigDao.updateById(flowConfig);
+            return ResponseEntity.ok(count > 0);
+        } catch (Exception e) {
+            log.error("更新智能体流程配置异常", e);
+            return ResponseEntity.status(500).build();
+        }
+    }
+
+    /**
+     * 删除智能体流程配置
+     *
+     * @param request 包含配置ID的请求
+     * @return 结果
+     */
+    @RequestMapping(value = "flow/deleteAgentFlowConfig", method = RequestMethod.POST)
+    public ResponseEntity<Boolean> deleteAgentFlowConfig(@RequestBody Map<String, Object> request) {
+        try {
+            String id = request.get("id").toString();
+            int count = aiAgentFlowConfigDao.deleteById(id);
+            return ResponseEntity.ok(count > 0);
+        } catch (Exception e) {
+            log.error("删除智能体流程配置异常", e);
+            return ResponseEntity.status(500).build();
+        }
+    }
+
+    /**
+     * 根据智能体ID删除所有流程配置
+     *
+     * @param request 包含智能体ID的请求
+     * @return 结果
+     */
+    @RequestMapping(value = "flow/deleteAgentFlowConfigByAgentId", method = RequestMethod.POST)
+    public ResponseEntity<Boolean> deleteAgentFlowConfigByAgentId(@RequestBody Map<String, Object> request) {
+        try {
+            String agentId = request.get("agentId").toString();
+            int count = aiAgentFlowConfigDao.deleteByAgentId(agentId);
+            return ResponseEntity.ok(count > 0);
+        } catch (Exception e) {
+            log.error("根据智能体ID删除流程配置异常", e);
             return ResponseEntity.status(500).build();
         }
     }

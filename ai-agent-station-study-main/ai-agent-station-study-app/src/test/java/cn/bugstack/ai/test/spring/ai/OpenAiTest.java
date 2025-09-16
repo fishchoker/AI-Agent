@@ -70,33 +70,28 @@ public class OpenAiTest {
     
 
 	
-	/*
-	 * @Test public void test_call() { //此处的model需要根据bean名称去拿，才能拿到自定义的model
-	 * //OpenAiChatModel chatModel = getBean("ai_client_model_2001"); ChatResponse
-	 * response = chatModel.call(new Prompt( "1+1", OpenAiChatOptions.builder()
-	 * .model("glm-4.5") .build())); log.info("测试结果(call):{}",
-	 * JSON.toJSONString(response)); }
-	 */
+	
+	  @Test public void test_call() { //此处的model需要根据bean名称去拿，才能拿到自定义的model
+	  //OpenAiChatModel chatModel = getBean("ai_client_model_2001"); 
+		  ChatResponse
+	  response = chatModel.call(new Prompt( "1+1", OpenAiChatOptions.builder()
+	  .model("glm-4.5") .build())); log.info("测试结果(call):{}",
+	  JSON.toJSONString(response)); }
+	 
 	 
 
-    @Test
-    public void test_call_images() {
-        UserMessage userMessage = UserMessage.builder()
-                .text("请描述这张图片的主要内容，并说明图中物品的可能用途。")
-                .media(org.springframework.ai.content.Media.builder()
-                        .mimeType(MimeType.valueOf(MimeTypeUtils.IMAGE_PNG_VALUE))
-                        .data(imageResource)
-                        .build())
-                .build();
-
-        ChatResponse response = chatModel.call(new Prompt(
-                userMessage,
-                OpenAiChatOptions.builder()
-                        .model("glm-4.5")
-                        .build()));
-
-        log.info("测试结果(images):{}", JSON.toJSONString(response));
-    }
+	
+	  @Test public void test_call_images() { UserMessage userMessage =
+	  UserMessage.builder() .text("请描述这张图片的主要内容，并说明图中物品的可能用途。")
+	  .media(org.springframework.ai.content.Media.builder()
+	  .mimeType(MimeType.valueOf(MimeTypeUtils.IMAGE_PNG_VALUE))
+	  .data(imageResource) .build()) .build();
+	  
+	  ChatResponse response = chatModel.call(new Prompt( userMessage,
+	  OpenAiChatOptions.builder() .model("glm-4.5V") .build()));
+	  
+	  log.info("测试结果(images):{}", JSON.toJSONString(response)); }
+	 
 
 	/*
 	 * @Test public void test_stream() throws InterruptedException { CountDownLatch

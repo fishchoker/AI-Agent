@@ -153,6 +153,9 @@ public class Step1AnalyzerNode extends AbstractExecuteSupport {
         
         // 发送最后一个section的内容
         sendAnalysisSubResult(dynamicContext, currentSection, sectionContent.toString(), sessionId);
+        
+        // 额外发送完整的分析结果，确保所有内容都被推送
+        sendCompleteAnalysisResult(dynamicContext, analysisResult, sessionId);
     }
 
     /**
@@ -165,6 +168,16 @@ public class Step1AnalyzerNode extends AbstractExecuteSupport {
                     dynamicContext.getStep(), subType, content, sessionId);
             sendSseResult(dynamicContext, result);
         }
+    }
+    
+    /**
+     * 发送完整的分析结果到流式输出
+     */
+    private void sendCompleteAnalysisResult(DefaultAutoAgentExecuteStrategyFactory.DynamicContext dynamicContext, 
+                                           String analysisResult, String sessionId) {
+        AutoAgentExecuteResultEntity result = AutoAgentExecuteResultEntity.createAnalysisResult(
+                dynamicContext.getStep(), analysisResult, sessionId);
+        sendSseResult(dynamicContext, result);
     }
 
 }
