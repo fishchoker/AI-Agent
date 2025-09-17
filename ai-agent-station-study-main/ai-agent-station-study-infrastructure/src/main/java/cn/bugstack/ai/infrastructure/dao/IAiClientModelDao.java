@@ -77,6 +77,13 @@ public interface IAiClientModelDao {
     List<AiClientModel> queryByModelType(String modelType);
 
     /**
+     * 根据模型名称模糊查询聊天模型配置
+     * @param modelName 模型名称（支持模糊匹配）
+     * @return 聊天模型配置列表
+     */
+    List<AiClientModel> queryByModelName(String modelName);
+
+    /**
      * 查询所有启用的聊天模型配置
      * @return 聊天模型配置列表
      */

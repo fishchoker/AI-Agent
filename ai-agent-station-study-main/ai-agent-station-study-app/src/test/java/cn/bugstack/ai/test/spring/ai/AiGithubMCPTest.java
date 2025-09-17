@@ -202,31 +202,23 @@ public class AiGithubMCPTest {
         }
     }
 
- // 删除仓库
-    @Test
-    public void test_deleteGithubRepo() {
-        String userRequest = """
-            使用 GitHub MCP 工具，调用 deleteRepository 接口。
-            参数：
-            - 用户名: fishchoker
-            - 仓库名: test-mcp-repo
-            """;
-
-        log.info("=== GitHub MCP 删除仓库测试 ===");
-
-        try {
-            String result = githubChatClient.prompt()
-                    .user(userRequest)
-                    .call()
-                    .content();
-
-            log.info("删除仓库结果: {}", result);
-        } catch (Exception e) {
-            log.error("删除仓库失败", e);
-        }
-
-        log.info("=== GitHub MCP 测试结束 ===");
-    }
+	/*
+	 * // 删除仓库
+	 * 
+	 * @Test public void test_deleteGithubRepo() { String userRequest = """ 使用
+	 * GitHub MCP 工具，调用 deleteRepository 接口。 参数： - 用户名: fishchoker - 仓库名:
+	 * test-mcp-repo """;
+	 * 
+	 * log.info("=== GitHub MCP 删除仓库测试 ===");
+	 * 
+	 * try { String result = githubChatClient.prompt() .user(userRequest) .call()
+	 * .content();
+	 * 
+	 * log.info("删除仓库结果: {}", result); } catch (Exception e) { log.error("删除仓库失败",
+	 * e); }
+	 * 
+	 * log.info("=== GitHub MCP 测试结束 ==="); }
+	 */
 
 
 }

@@ -209,14 +209,35 @@ public class AgentRepository implements IAgentRepository {
                                         mcpVO.setTransportConfigSse(transportConfigSse);
                                     } else if ("stdio".equals(transportType)) {
                                         // 解析STDIO配置
-                                        Map<String, AiClientToolMcpVO.TransportConfigStdio.Stdio> stdio = JSON.parseObject(transportConfig,
-                                                new TypeReference<>() {
-                                                });
+                                        log.info("解析STDIO配置 - MCP: {}, 配置: {}", mcpVO.getMcpName(), transportConfig);
+                                        try {
+                                            Map<String, AiClientToolMcpVO.TransportConfigStdio.Stdio> stdio = JSON.parseObject(transportConfig,
+                                                    new TypeReference<>() {
+                                                    });
 
-                                        AiClientToolMcpVO.TransportConfigStdio transportConfigStdio = new AiClientToolMcpVO.TransportConfigStdio();
-                                        transportConfigStdio.setStdio(stdio);
+                                            log.info("STDIO配置解析结果 - MCP: {}, 解析后的Map: {}", mcpVO.getMcpName(), stdio);
+                                            log.info("MCP名称: {}, 查找的key: {}", mcpVO.getMcpName(), mcpVO.getMcpName());
 
-                                        mcpVO.setTransportConfigStdio(transportConfigStdio);
+                                            if (stdio == null || stdio.isEmpty()) {
+                                                log.error("STDIO配置解析结果为空 - MCP: {}, 配置: {}", mcpVO.getMcpName(), transportConfig);
+                                                continue; // 跳过这个MCP配置
+                                            }
+
+                                            // 检查是否包含对应的key
+                                            if (!stdio.containsKey(mcpVO.getMcpName())) {
+                                                log.error("STDIO配置中未找到key '{}' - 可用keys: {}", mcpVO.getMcpName(), stdio.keySet());
+                                                continue; // 跳过这个MCP配置
+                                            }
+
+                                            AiClientToolMcpVO.TransportConfigStdio transportConfigStdio = new AiClientToolMcpVO.TransportConfigStdio();
+                                            transportConfigStdio.setStdio(stdio);
+
+                                            mcpVO.setTransportConfigStdio(transportConfigStdio);
+                                            log.info("STDIO配置解析成功 - MCP: {}, 配置项: {}", mcpVO.getMcpName(), stdio.keySet());
+                                        } catch (Exception e) {
+                                            log.error("STDIO配置解析失败 - MCP: {}, 配置: {}, 错误: {}", mcpVO.getMcpName(), transportConfig, e.getMessage(), e);
+                                            continue; // 跳过这个MCP配置
+                                        }
                                     }
                                 } catch (Exception e) {
                                     log.error("解析传输配置失败: {}", e.getMessage(), e);
@@ -538,6 +559,11 @@ public class AgentRepository implements IAgentRepository {
     @Override
     public AiAgentVO queryAiAgentByAgentId(String aiAgentId) {
         AiAgent aiAgent = aiAgentDao.queryByAgentId(aiAgentId);
+        
+        if (aiAgent == null) {
+            log.warn("未找到智能体配置，agentId: {}", aiAgentId);
+            return null;
+        }
 
         return AiAgentVO.builder()
                 .agentId(aiAgent.getAgentId())

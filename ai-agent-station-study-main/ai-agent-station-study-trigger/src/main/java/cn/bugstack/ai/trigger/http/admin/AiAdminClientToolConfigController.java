@@ -36,19 +36,20 @@ public class AiAdminClientToolConfigController {
     private IAiClientConfigDao aiClientConfigDao;
 
     /**
-     * 查询客户端工具配置列表
-     *
-     * @param aiClientToolMcp 查询条件
-     * @return 工具配置列表
+     * 查询客户端工具配置列表（补充 mcpName/description）
      */
     @RequestMapping(value = "queryClientToolConfigList", method = RequestMethod.POST)
     public ResponseEntity<List<Map<String, Object>>> queryClientToolConfigList(@RequestBody(required = false) Map<String, Object> request) {
         try {
             String filterClientId = request != null && request.get("clientId") != null ? String.valueOf(request.get("clientId")) : null;
             String filterToolId = request != null && request.get("toolId") != null ? String.valueOf(request.get("toolId")) : null;
-            // 可接收 pageNum/pageSize/searchType/searchValue，但当前不分页
 
             List<AiClientConfig> allConfigs = aiClientConfigDao.queryAll();
+            // 预取所有 MCP 映射，避免多次查询
+            List<AiClientToolMcp> mcps = aiClientToolMcpDao.queryAll();
+            Map<String, AiClientToolMcp> mcpById = mcps.stream()
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toMap(AiClientToolMcp::getMcpId, x -> x, (a, b) -> a));
 
             List<Map<String, Object>> rows = allConfigs.stream()
                     .filter(Objects::nonNull)
@@ -60,10 +61,22 @@ public class AiAdminClientToolConfigController {
                         m.put("configId", cfg.getId());
                         m.put("clientId", String.valueOf(cfg.getSourceId()));
                         m.put("targetType", "tool_mcp");
-                        m.put("toolId", String.valueOf(cfg.getTargetId()));
+                        String mcpId = String.valueOf(cfg.getTargetId());
+                        m.put("toolId", mcpId);
                         m.put("status", cfg.getStatus());
                         m.put("createTime", cfg.getCreateTime());
                         m.put("updateTime", cfg.getUpdateTime());
+                        // 补充 mcp 信息（确保始终返回表格字段）
+                        AiClientToolMcp mcp = mcpById.get(mcpId);
+                        String mcpName = mcp != null && mcp.getMcpName() != null ? mcp.getMcpName() : "";
+                        String transportType = mcp != null && mcp.getTransportType() != null ? mcp.getTransportType() : "";
+                        // 前端所需字段
+                        m.put("toolName", mcpName);
+                        // 需求：description 对应数据表中的 transportType
+                        m.put("description", transportType);
+                        // 兼容：snake_case 字段
+                        m.put("mcp_name", mcpName);
+                        m.put("transport_type", transportType);
                         return m;
                     })
                     .collect(Collectors.toList());
@@ -75,12 +88,6 @@ public class AiAdminClientToolConfigController {
         }
     }
 
-    /**
-     * 查询客户端工具配置详情
-     *
-     * @param request 包含配置ID的请求
-     * @return 工具配置详情
-     */
     @RequestMapping(value = "queryClientToolConfigDetail", method = RequestMethod.POST)
     public ResponseEntity<AiClientToolMcp> queryClientToolConfigDetail(@RequestBody AiClientToolMcp request) {
         try {
@@ -92,12 +99,6 @@ public class AiAdminClientToolConfigController {
         }
     }
 
-    /**
-     * 新增客户端工具配置
-     *
-     * @param aiClientToolMcp 工具配置
-     * @return 结果
-     */
     @RequestMapping(value = "addClientToolConfig", method = RequestMethod.POST)
     public ResponseEntity<Boolean> addClientToolConfig(@RequestBody AiClientToolMcp aiClientToolMcp) {
         try {
@@ -111,12 +112,6 @@ public class AiAdminClientToolConfigController {
         }
     }
 
-    /**
-     * 更新客户端工具配置
-     *
-     * @param aiClientToolMcp 工具配置
-     * @return 结果
-     */
     @RequestMapping(value = "updateClientToolConfig", method = RequestMethod.POST)
     public ResponseEntity<Boolean> updateClientToolConfig(@RequestBody AiClientToolMcp aiClientToolMcp) {
         try {
@@ -129,12 +124,6 @@ public class AiAdminClientToolConfigController {
         }
     }
 
-    /**
-     * 删除客户端工具配置
-     *
-     * @param aiClientToolMcp 工具配置
-     * @return 结果
-     */
     @RequestMapping(value = "deleteClientToolConfig", method = RequestMethod.POST)
     public ResponseEntity<Boolean> deleteClientToolConfig(@RequestBody AiClientToolMcp aiClientToolMcp) {
         try {

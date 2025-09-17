@@ -42,7 +42,17 @@ public abstract class AbstractExecuteSupport extends AbstractMultiThreadStrategy
     }
 
     protected ChatClient getChatClientByClientId(String clientId) {
-        return getBean(AiAgentEnumVO.AI_CLIENT.getBeanName(clientId));
+        String beanName = AiAgentEnumVO.AI_CLIENT.getBeanName(clientId);
+        log.info("尝试获取ChatClient Bean: {}, clientId: {}", beanName, clientId);
+        
+        try {
+            ChatClient chatClient = getBean(beanName);
+            log.info("成功获取ChatClient Bean: {}", beanName);
+            return chatClient;
+        } catch (Exception e) {
+            log.error("获取ChatClient Bean失败: {}, 错误: {}", beanName, e.getMessage(), e);
+            throw new RuntimeException("无法获取ChatClient Bean: " + beanName, e);
+        }
     }
 
     protected <T> T getBean(String beanName) {

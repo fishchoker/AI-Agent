@@ -55,7 +55,7 @@ public class Step4ExecuteStepsNode extends AbstractExecuteSupport {
             sendSseResult(dynamicContext, result);
             
             // 发送总结结果到【最终执行结果】区域
-            sendSummaryResult(dynamicContext, request.getSessionId());
+            //sendSummaryResult(dynamicContext, request.getSessionId());
             
             // 发送完成标识
             sendCompleteResult(dynamicContext, request.getSessionId());

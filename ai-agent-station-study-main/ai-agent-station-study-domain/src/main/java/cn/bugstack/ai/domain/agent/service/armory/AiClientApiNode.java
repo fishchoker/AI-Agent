@@ -54,6 +54,10 @@ public class AiClientApiNode extends AbstractArmorySupport {
 
         for (AiClientApiVO aiClientApiVO : aiClientApiList) {
             // 构建 OpenAiApi
+            log.info("正在构建API配置 - apiId: {}, baseUrl: {}, completionsPath: {}, embeddingsPath: {}", 
+                    aiClientApiVO.getApiId(), aiClientApiVO.getBaseUrl(), 
+                    aiClientApiVO.getCompletionsPath(), aiClientApiVO.getEmbeddingsPath());
+            
             OpenAiApi openAiApi = OpenAiApi.builder()
                     .baseUrl(aiClientApiVO.getBaseUrl())
                     .apiKey(aiClientApiVO.getApiKey())
@@ -61,9 +65,10 @@ public class AiClientApiNode extends AbstractArmorySupport {
                     .embeddingsPath(aiClientApiVO.getEmbeddingsPath())
                     .build();
 			
-			  // 打印 baseUrl 和 completionsPath
-			  log.info("组装结果 - baseUrl: {}, completionsPath: {}",
-			  aiClientApiVO.getBaseUrl(), aiClientApiVO.getCompletionsPath());
+			  // 打印最终构建的API配置
+			  log.info("API配置构建完成 - apiId: {}, baseUrl: {}, completionsPath: {}, embeddingsPath: {}",
+			  aiClientApiVO.getApiId(), aiClientApiVO.getBaseUrl(), 
+			  aiClientApiVO.getCompletionsPath(), aiClientApiVO.getEmbeddingsPath());
 			 
 
             // 注册 OpenAiApi Bean 对象
@@ -87,8 +92,11 @@ public class AiClientApiNode extends AbstractArmorySupport {
                     .vectorTableName("vector_store_openai") // 固定表名
                     .build();
 
-            // 4. 注册 Bean
-            registerBean("vectorStore", PgVectorStore.class, vectorStore);
+            // 4. 注册 Bean（使用独立名称，避免覆盖默认/其他实例），并写入动态上下文供后续节点使用
+            String vectorStoreBeanName = "vectorStore_" + aiClientApiVO.getApiId();
+            registerBean(vectorStoreBeanName, PgVectorStore.class, vectorStore);
+            dynamicContext.setValue("vector_store_bean", vectorStoreBeanName);
+            log.info("已注册 VectorStore Bean: {}，表: vector_store_openai", vectorStoreBeanName);
         }
 
         return router(requestParameter, dynamicContext);

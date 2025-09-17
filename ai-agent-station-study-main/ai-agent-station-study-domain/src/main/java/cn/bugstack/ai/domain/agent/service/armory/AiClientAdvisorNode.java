@@ -44,7 +44,7 @@ public class AiClientAdvisorNode extends AbstractArmorySupport {
 
         for (AiClientAdvisorVO aiClientAdvisorVO : aiClientAdvisorList) {
             // 构建顾问访问对象
-            Advisor advisor = createAdvisor(aiClientAdvisorVO);
+            Advisor advisor = createAdvisor(aiClientAdvisorVO, dynamicContext);
             // 注册Bean对象
             registerBean(beanName(aiClientAdvisorVO.getAdvisorId()), Advisor.class, advisor);
         }
@@ -66,9 +66,18 @@ public class AiClientAdvisorNode extends AbstractArmorySupport {
         return AiAgentEnumVO.AI_CLIENT_ADVISOR.getDataName();
     }
 
-    private Advisor createAdvisor(AiClientAdvisorVO aiClientAdvisorVO) {
+    private Advisor createAdvisor(AiClientAdvisorVO aiClientAdvisorVO, DefaultArmoryStrategyFactory.DynamicContext dynamicContext) {
         String advisorType = aiClientAdvisorVO.getAdvisorType();
         AiClientAdvisorTypeEnumVO advisorTypeEnum = AiClientAdvisorTypeEnumVO.getByCode(advisorType);
+        // 优先使用动态上下文里指定的 vectorStore（按 apiId 注册的实例），否则回退到注入的默认 vectorStore
+        try {
+            String vectorStoreBeanName = dynamicContext.getValue("vector_store_bean");
+            if (vectorStoreBeanName != null && !vectorStoreBeanName.isBlank()) {
+                org.springframework.ai.vectorstore.VectorStore vs = getBean(vectorStoreBeanName);
+                return advisorTypeEnum.createAdvisor(aiClientAdvisorVO, vs);
+            }
+        } catch (Exception ignore) {
+        }
         return advisorTypeEnum.createAdvisor(aiClientAdvisorVO, vectorStore);
     }
 

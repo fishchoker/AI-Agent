@@ -76,6 +76,13 @@
         ORDER BY create_time DESC
     </select>
 
+    <select id="queryByModelName" parameterType="java.lang.String" resultMap="AiClientModelMap">
+        SELECT id, model_id, api_id, model_name, model_type, status, create_time, update_time
+        FROM ai_client_model
+        WHERE model_name LIKE CONCAT('%', #{modelName}, '%')
+        ORDER BY create_time DESC
+    </select>
+
     <select id="queryEnabledModels" resultMap="AiClientModelMap">
         SELECT id, model_id, api_id, model_name, model_type, status, create_time, update_time
         FROM ai_client_model

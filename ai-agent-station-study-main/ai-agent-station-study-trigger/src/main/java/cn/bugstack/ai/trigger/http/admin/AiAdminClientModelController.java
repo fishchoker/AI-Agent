@@ -41,6 +41,10 @@ public class AiAdminClientModelController {
             if (request.containsKey("modelType") && request.get("modelType") != null) {
                 String modelType = request.get("modelType").toString();
                 modelList = aiClientModelDao.queryByModelType(modelType);
+            } else if (request.containsKey("modelName") && request.get("modelName") != null) {
+                // 如果传入了modelName，则根据名称模糊查询
+                String modelName = request.get("modelName").toString();
+                modelList = aiClientModelDao.queryByModelName(modelName);
             } else if (request.containsKey("apiId") && request.get("apiId") != null) {
                 // 如果传入了apiId，则根据apiId查询
                 String apiId = request.get("apiId").toString();

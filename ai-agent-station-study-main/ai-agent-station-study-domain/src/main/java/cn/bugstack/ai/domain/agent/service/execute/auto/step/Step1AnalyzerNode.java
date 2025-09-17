@@ -26,6 +26,13 @@ public class Step1AnalyzerNode extends AbstractExecuteSupport {
 
         // 获取配置信息
         AiAgentClientFlowConfigVO aiAgentClientFlowConfigVO = dynamicContext.getAiAgentClientFlowConfigVOMap().get(AiClientTypeEnumVO.TASK_ANALYZER_CLIENT.getCode());
+        
+        if (aiAgentClientFlowConfigVO == null) {
+            log.error("未找到TASK_ANALYZER_CLIENT配置，agentId: {}, 可用配置: {}", 
+                requestParameter.getAiAgentId(), 
+                dynamicContext.getAiAgentClientFlowConfigVOMap().keySet());
+            throw new RuntimeException("未找到TASK_ANALYZER_CLIENT配置");
+        }
 
         // 第一阶段：任务分析
         log.info("\n📊 阶段1: 任务状态分析");

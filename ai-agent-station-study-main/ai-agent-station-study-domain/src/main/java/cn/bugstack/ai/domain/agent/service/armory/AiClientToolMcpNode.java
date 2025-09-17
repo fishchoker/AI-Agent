@@ -105,8 +105,22 @@ public class AiClientToolMcpNode extends AbstractArmorySupport {
             }
             case "stdio" -> {
                 AiClientToolMcpVO.TransportConfigStdio transportConfigStdio = aiClientToolMcpVO.getTransportConfigStdio();
+                if (transportConfigStdio == null) {
+                    log.error("MCP {} 的 stdio 配置为空，跳过初始化", aiClientToolMcpVO.getMcpName());
+                    throw new RuntimeException("MCP " + aiClientToolMcpVO.getMcpName() + " 的 stdio 配置为空");
+                }
+                
                 Map<String, AiClientToolMcpVO.TransportConfigStdio.Stdio> stdioMap = transportConfigStdio.getStdio();
+                if (stdioMap == null || stdioMap.isEmpty()) {
+                    log.error("MCP {} 的 stdio 配置映射为空，跳过初始化", aiClientToolMcpVO.getMcpName());
+                    throw new RuntimeException("MCP " + aiClientToolMcpVO.getMcpName() + " 的 stdio 配置映射为空");
+                }
+                
                 AiClientToolMcpVO.TransportConfigStdio.Stdio stdio = stdioMap.get(aiClientToolMcpVO.getMcpName());
+                if (stdio == null) {
+                    log.error("MCP {} 的 stdio 配置中未找到对应的配置项，跳过初始化", aiClientToolMcpVO.getMcpName());
+                    throw new RuntimeException("MCP " + aiClientToolMcpVO.getMcpName() + " 的 stdio 配置中未找到对应的配置项");
+                }
 
                 // https://github.com/modelcontextprotocol/servers/tree/main/src/filesystem
                 var stdioParams = ServerParameters.builder(stdio.getCommand())

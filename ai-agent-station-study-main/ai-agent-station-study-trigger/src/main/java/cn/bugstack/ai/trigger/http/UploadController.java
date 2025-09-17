@@ -79,16 +79,17 @@ public class UploadController {
 				}
 			}
 
-			// 5) 入库前：校验当前连接与目标表维度
+			// 5) 入库前：校验当前连接与目标表维度（解析 format_type 括号数字为真实维度）
 			Map<String, Object> conn = pgVectorJdbcTemplate.queryForMap(
 					"SELECT current_database() AS db, current_user AS usr, inet_server_addr()::text AS host, inet_server_port() AS port, current_schema() AS schema"
 			);
 			Map<String, Object> embeddingInfo = pgVectorJdbcTemplate.queryForMap(
-					"SELECT format_type(a.atttypid,a.atttypmod) AS embedding_type, (a.atttypmod - 16)/4 AS dims\n" +
+					"SELECT format_type(a.atttypid,a.atttypmod) AS embedding_type, " +
+							"NULLIF(substring(format_type(a.atttypid,a.atttypmod) FROM '\\((\\d+)\\)'), '')::int AS dims_parsed\n" +
 							"FROM pg_attribute a\n" +
 							"WHERE a.attrelid = 'public.vector_store_openai'::regclass AND a.attname = 'embedding'"
 			);
-			Integer dims = embeddingInfo.get("dims") == null ? null : Integer.valueOf(embeddingInfo.get("dims").toString());
+			Integer dims = embeddingInfo.get("dims_parsed") == null ? null : Integer.valueOf(embeddingInfo.get("dims_parsed").toString());
 
 			Map<String, Object> data = new HashMap<>();
 			data.put("uploaded", fileInfos);
@@ -128,5 +129,4 @@ public class UploadController {
 			return ResponseEntity.status(500).body(resp);
 		}
 	}
-
 }
