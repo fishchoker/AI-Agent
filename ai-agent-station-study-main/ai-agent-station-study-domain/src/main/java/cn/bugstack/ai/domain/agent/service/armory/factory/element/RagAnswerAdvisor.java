@@ -43,12 +43,14 @@ public class RagAnswerAdvisor implements BaseAdvisor {
     public ChatClientRequest before(ChatClientRequest chatClientRequest, AdvisorChain advisorChain) {
         HashMap<String, Object> context = new HashMap(chatClientRequest.context());
 
-        // 不再解析和拼接用户输入，统一依赖上游 Prompt/默认查询配置
+        // 获取查询文本并限制长度，避免API调用参数过大
+        String queryText = getQueryText(chatClientRequest, context);
         SearchRequest searchRequestToUse = SearchRequest.from(this.searchRequest)
+                .query(queryText)
                 .filterExpression(this.doGetFilterExpression(context))
                 .build();
         
-        log.info("RagAnswerAdvisor 开始向量检索 - 使用默认/上游查询配置，过滤条件: {}", this.doGetFilterExpression(context));
+        log.info("RagAnswerAdvisor 开始向量检索 - 查询文本: {}, 过滤条件: {}", queryText, this.doGetFilterExpression(context));
         log.info("使用的 vectorStore 类型: {}", this.vectorStore.getClass().getSimpleName());
         // 追加：在异步场景下打印实际使用的 Embedding 配置（baseUrl/embeddingsPath/model），便于排查 404 等问题
         try {
@@ -59,12 +61,32 @@ public class RagAnswerAdvisor implements BaseAdvisor {
         
         List<Document> documents = this.vectorStore.similaritySearch(searchRequestToUse);
         
-        log.info("向量检索完成 - 检索到文档数量: {}", documents != null ? documents.size() : 0);
+        int docSize = documents != null ? documents.size() : 0;
+        log.info("向量检索完成 - 检索到文档数量: {}", docSize);
+        // 构建可读摘要并打印（最多前5条，避免日志过长）
+        if (documents != null && !documents.isEmpty()) {
+            int limit = Math.min(5, documents.size());
+            for (int i = 0; i < limit; i++) {
+                Document d = documents.get(i);
+                String knowledge = String.valueOf(d.getMetadata().getOrDefault("knowledge", ""));
+                String snippet = d.getText() == null ? "" : d.getText().replaceAll("\n", " ");
+                if (snippet.length() > 200) snippet = snippet.substring(0, 200) + "...";
+                log.info("相似记录[{}] knowledge='{}' snippet='{}'", i + 1, knowledge, snippet);
+            }
+        }
         context.put("qa_retrieved_documents", documents);
 
         String documentContext = documents.stream().map(Document::getText).collect(Collectors.joining(System.lineSeparator()));
         Map<String, Object> advisedUserParams = new HashMap(chatClientRequest.context());
         advisedUserParams.put("question_answer_context", documentContext);
+        // 仅输出相似记录的原始内容列表
+        if (documents != null && !documents.isEmpty()) {
+            java.util.List<String> contents = new java.util.ArrayList<>();
+            for (Document d : documents) {
+                contents.add(d.getText());
+            }
+            advisedUserParams.put("qa_retrieved_contents", contents);
+        }
 
         // 不修改原始提示词内容，仅透传并增加向量检索上下文
         return ChatClientRequest.builder()
@@ -180,6 +202,42 @@ public class RagAnswerAdvisor implements BaseAdvisor {
         } catch (Exception ignore) {
             return null;
         }
+    }
+
+    /**
+     * 获取查询文本并限制长度，避免API调用参数过大
+     */
+    private String getQueryText(ChatClientRequest chatClientRequest, Map<String, Object> context) {
+        String queryText = "";
+        
+        // 1) 优先从上下文获取原始用户输入
+        String[] keys = new String[]{"original_user_text", "original_user_input", "user_input", "userText", "message"};
+        for (String k : keys) {
+            Object v = context.get(k);
+            if (v != null) {
+                String s = String.valueOf(v).trim();
+                if (!s.isEmpty()) {
+                    queryText = s;
+                    break;
+                }
+            }
+        }
+        
+        // 2) 从Prompt的UserMessage获取
+        if (queryText.isEmpty()) {
+            try {
+                queryText = chatClientRequest.prompt().getUserMessage().getText();
+            } catch (Exception ignore) {
+            }
+        }
+        
+        // 3) 限制查询文本长度，避免API调用参数过大（通常限制在500字符内）
+        if (queryText.length() > 500) {
+            queryText = queryText.substring(0, 500) + "...";
+            log.warn("查询文本过长，已截断至500字符: {}", queryText);
+        }
+        
+        return queryText.isEmpty() ? "default query" : queryText;
     }
 
 }

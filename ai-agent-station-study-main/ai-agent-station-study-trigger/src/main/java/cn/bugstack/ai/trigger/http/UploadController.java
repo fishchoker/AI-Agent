@@ -14,6 +14,9 @@ import org.springframework.ai.transformer.splitter.TokenTextSplitter;
 import org.springframework.ai.vectorstore.pgvector.PgVectorStore;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.jdbc.core.JdbcTemplate;
+import cn.bugstack.ai.infrastructure.dao.IAiClientRagOrderDao;
+import cn.bugstack.ai.infrastructure.dao.po.AiClientRagOrder;
+import org.springframework.context.ApplicationContext;
 
 @Slf4j
 @RestController()
@@ -23,12 +26,43 @@ public class UploadController {
 
 	@Resource
 	private PgVectorStore pgVectorStore;
+	
+	// 动态获取PgVectorStore Bean
+	private PgVectorStore getDynamicPgVectorStore() {
+		try {
+			// 尝试获取动态装配的PgVectorStore Bean
+			// 动态Bean名称格式：vectorStore_{apiId}
+			String[] beanNames = applicationContext.getBeanNamesForType(PgVectorStore.class);
+			log.info("找到所有PgVectorStore Bean: {}", java.util.Arrays.toString(beanNames));
+			
+			for (String beanName : beanNames) {
+				if (beanName.startsWith("vectorStore_")) {
+					log.info("使用动态装配的PgVectorStore Bean: {}", beanName);
+					PgVectorStore vectorStore = applicationContext.getBean(beanName, PgVectorStore.class);
+					log.info("成功获取动态PgVectorStore Bean: {}, 类型: {}", beanName, vectorStore.getClass().getName());
+					return vectorStore;
+				}
+			}
+			// 如果没有找到动态Bean，使用默认的
+			log.info("未找到动态装配的PgVectorStore，使用默认Bean");
+			return pgVectorStore;
+		} catch (Exception e) {
+			log.warn("获取动态PgVectorStore失败，使用默认Bean: {}", e.getMessage(), e);
+			return pgVectorStore;
+		}
+	}
 
 	@Resource
 	private TokenTextSplitter tokenTextSplitter;
 
 	@Resource(name = "pgVectorJdbcTemplate")
 	private JdbcTemplate pgVectorJdbcTemplate;
+
+	@Resource
+	private IAiClientRagOrderDao aiClientRagOrderDao;
+
+	@Resource
+	private ApplicationContext applicationContext;
 
 	/**
 	 * 批量上传文件：解析 -> 分片 -> 设置元数据(knowledge) -> 校验表维度 -> 向量化入库
@@ -64,10 +98,8 @@ public class UploadController {
 					// 3) 分片
 					List<Document> chunks = tokenTextSplitter.apply(documents);
 
-					// 4) 设置 knowledge 元数据（优先知识库参数，其次文件名）
-					String knowledge = (knowledgeTag != null && !knowledgeTag.isEmpty())
-							? knowledgeTag
-							: Optional.ofNullable(file.getOriginalFilename()).orElse("default-knowledge");
+					// 4) 设置 knowledge 元数据
+					String knowledge = determineKnowledgeValue(knowledgeTag, ragId, file.getOriginalFilename());
 					for (Document chunk : chunks) {
 						chunk.getMetadata().put("knowledge", knowledge);
 						if (ragId != null && !ragId.isEmpty()) {
@@ -111,7 +143,19 @@ public class UploadController {
 			// 6) 入库
 			int chunkCount = allDocuments.size();
 			if (!allDocuments.isEmpty()) {
-				pgVectorStore.accept(allDocuments);
+				log.info("开始向量化入库，文档数量: {}", chunkCount);
+				
+				// 优先使用动态注册的 PgVectorStore（存在则选择以 vectorStore_ 开头的 Bean），否则回退到默认 Bean
+				PgVectorStore vectorStore = getDynamicPgVectorStore();
+				log.info("使用PgVectorStore实例: {}", vectorStore.getClass().getName());
+				try {
+					log.info("调用PgVectorStore.accept()开始...");
+					vectorStore.accept(allDocuments);
+					log.info("PgVectorStore.accept()完成");
+				} catch (Exception e) {
+					log.error("PgVectorStore.accept()失败: {}", e.getMessage(), e);
+					throw e;
+				}
 			}
 			data.put("chunks", chunkCount);
 
@@ -129,4 +173,37 @@ public class UploadController {
 			return ResponseEntity.status(500).body(resp);
 		}
 	}
+
+	/**
+	 * 确定knowledge值
+	 * 优先级：knowledgeTag > ragId对应的rag_name > 文件名 > 默认值
+	 */
+	private String determineKnowledgeValue(String knowledgeTag, String ragId, String fileName) {
+		// 1. 优先使用knowledgeTag
+		if (knowledgeTag != null && !knowledgeTag.trim().isEmpty()) {
+			return knowledgeTag.trim();
+		}
+		
+		// 2. 如果有ragId，查询对应的rag_name
+		if (ragId != null && !ragId.trim().isEmpty()) {
+			try {
+				AiClientRagOrder ragOrder = aiClientRagOrderDao.queryByRagId(ragId.trim());
+				if (ragOrder != null && ragOrder.getRagName() != null && !ragOrder.getRagName().trim().isEmpty()) {
+					log.info("使用ragId对应的rag_name作为knowledge: ragId={}, ragName={}", ragId, ragOrder.getRagName());
+					return ragOrder.getRagName().trim();
+				}
+			} catch (Exception e) {
+				log.warn("查询ragId对应的rag_name失败: ragId={}, error={}", ragId, e.getMessage());
+			}
+		}
+		
+		// 3. 使用文件名
+		if (fileName != null && !fileName.trim().isEmpty()) {
+			return fileName.trim();
+		}
+		
+		// 4. 默认值
+		return "default-knowledge";
+	}
+
 }

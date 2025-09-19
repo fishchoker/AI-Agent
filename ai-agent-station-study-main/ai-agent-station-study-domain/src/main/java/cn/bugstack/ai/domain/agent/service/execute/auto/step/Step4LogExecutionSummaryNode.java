@@ -73,20 +73,40 @@ public class Step4LogExecutionSummaryNode extends AbstractExecuteSupport {
             log.info("\n--- 生成{}任务的最终答案 ---", isCompleted ? "已完成" : "未完成");
 
             AiAgentClientFlowConfigVO aiAgentClientFlowConfigVO = dynamicContext.getAiAgentClientFlowConfigVOMap().get(AiClientTypeEnumVO.RESPONSE_ASSISTANT.getCode());
+            
+            // 检查配置是否为空，为空时使用兜底方案
+            if (aiAgentClientFlowConfigVO == null) {
+                log.warn("RESPONSE_ASSISTANT配置为空，使用执行历史作为兜底总结");
+                String fallbackSummary = "## 执行总结\n\n" + dynamicContext.getExecutionHistory().toString();
+                logFinalReport(dynamicContext, fallbackSummary, requestParameter.getSessionId());
+                dynamicContext.setValue("finalSummary", fallbackSummary);
+                return;
+            }
 
             String summaryPrompt = getSummaryPrompt(aiAgentClientFlowConfigVO, requestParameter, dynamicContext, isCompleted);
 
             // 获取对话客户端 - 使用任务分析客户端进行总结
             ChatClient chatClient = getChatClientByClientId(aiAgentClientFlowConfigVO.getClientId());
             
-            String summaryResult = chatClient
-                    .prompt(summaryPrompt)
-                    .advisors(a -> a
-                            .param(CHAT_MEMORY_CONVERSATION_ID_KEY, requestParameter.getSessionId() + "-summary")
-                            .param(CHAT_MEMORY_RETRIEVE_SIZE_KEY, 50))
-                    .call().content();
+            // 设置超时控制，避免无限等待
+            String summaryResult;
+            try {
+                summaryResult = chatClient
+                        .prompt(summaryPrompt)
+                        .advisors(a -> a
+                                .param(CHAT_MEMORY_CONVERSATION_ID_KEY, requestParameter.getSessionId() + "-summary")
+                                .param(CHAT_MEMORY_RETRIEVE_SIZE_KEY, 50))
+                        .call().content();
+            } catch (Exception chatException) {
+                log.error("ChatClient调用异常，使用执行历史作为兜底: {}", chatException.getMessage());
+                summaryResult = "## 执行总结\n\n" + dynamicContext.getExecutionHistory().toString();
+            }
 
-            assert summaryResult != null;
+            if (summaryResult == null || summaryResult.trim().isEmpty()) {
+                log.warn("总结结果为空，使用执行历史作为兜底");
+                summaryResult = "## 执行总结\n\n" + dynamicContext.getExecutionHistory().toString();
+            }
+            
             logFinalReport(dynamicContext, summaryResult, requestParameter.getSessionId());
             
             // 将总结结果保存到动态上下文中
@@ -94,6 +114,14 @@ public class Step4LogExecutionSummaryNode extends AbstractExecuteSupport {
             
         } catch (Exception e) {
             log.error("生成最终总结报告时出现异常: {}", e.getMessage(), e);
+            // 异常兜底：确保至少推送执行历史
+            try {
+                String fallbackSummary = "## 执行总结\n\n" + dynamicContext.getExecutionHistory().toString();
+                logFinalReport(dynamicContext, fallbackSummary, requestParameter.getSessionId());
+                dynamicContext.setValue("finalSummary", fallbackSummary);
+            } catch (Exception fallbackException) {
+                log.error("兜底总结也失败: {}", fallbackException.getMessage());
+            }
         }
     }
 

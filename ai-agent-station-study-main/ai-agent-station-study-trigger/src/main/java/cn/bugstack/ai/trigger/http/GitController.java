@@ -9,7 +9,10 @@ import org.springframework.http.*;
 import jakarta.annotation.Resource;
 import cn.bugstack.ai.domain.ingest.service.GitIngestService;
 import cn.bugstack.ai.domain.ingest.model.IngestResult;
+import cn.bugstack.ai.infrastructure.dao.IAiClientRagOrderDao;
+import cn.bugstack.ai.infrastructure.dao.po.AiClientRagOrder;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.List;
@@ -22,6 +25,9 @@ public class GitController {
 
     @Resource
     private GitIngestService gitIngestService;
+
+    @Resource
+    private IAiClientRagOrderDao aiClientRagOrderDao;
 
     @RequestMapping(value = "test-connection", method = RequestMethod.POST)
     public ResponseEntity<Map<String, Object>> testGitConnection(@RequestBody Map<String, Object> request) {
@@ -148,6 +154,41 @@ public class GitController {
             @SuppressWarnings("unchecked") List<String> po = (List<String>) parseOptions;
             IngestResult r = gitIngestService.ingest(repoUrl, branch, po,
                     firstNonEmpty(knowledgeName, knowledgeBaseName), ragId, baseDir);
+            
+            // 同步更新 ai_client_rag_order 表
+            String finalKnowledgeName = firstNonEmpty(knowledgeName, knowledgeBaseName, r.getKnowledge());
+            String finalRagId = firstNonEmpty(ragId, r.getRagId());
+            if (finalRagId != null && !finalRagId.isEmpty()) {
+                try {
+                    // 检查是否已存在该ragId的记录
+                    AiClientRagOrder existingRagOrder = aiClientRagOrderDao.queryByRagId(finalRagId);
+                    if (existingRagOrder == null) {
+                        // 创建新的知识库记录
+                        AiClientRagOrder newRagOrder = AiClientRagOrder.builder()
+                                .ragId(finalRagId)
+                                .ragName(firstNonEmpty(knowledgeBaseName, finalKnowledgeName, "GitHub知识库"))
+                                .knowledgeTag(finalKnowledgeName)
+                                .status(1) // 启用状态
+                                .createTime(LocalDateTime.now())
+                                .updateTime(LocalDateTime.now())
+                                .build();
+                        aiClientRagOrderDao.insert(newRagOrder);
+                        log.info("成功创建知识库记录: ragId={}, ragName={}, knowledgeTag={}", 
+                                finalRagId, newRagOrder.getRagName(), finalKnowledgeName);
+                    } else {
+                        // 更新现有记录
+                        existingRagOrder.setRagName(firstNonEmpty(knowledgeBaseName, finalKnowledgeName, existingRagOrder.getRagName()));
+                        existingRagOrder.setKnowledgeTag(finalKnowledgeName);
+                        existingRagOrder.setUpdateTime(LocalDateTime.now());
+                        aiClientRagOrderDao.updateById(existingRagOrder);
+                        log.info("成功更新知识库记录: ragId={}, ragName={}, knowledgeTag={}", 
+                                finalRagId, existingRagOrder.getRagName(), finalKnowledgeName);
+                    }
+                } catch (Exception e) {
+                    log.warn("同步更新ai_client_rag_order表失败: {}", e.getMessage(), e);
+                }
+            }
+            
             Map<String, Object> ingestData = new HashMap<>();
             ingestData.put("clonedPath", r.getClonedPath());
             ingestData.put("ingestedDocuments", r.getDocuments());

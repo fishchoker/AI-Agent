@@ -9,6 +9,7 @@ import org.springframework.ai.reader.tika.TikaDocumentReader;
 import org.springframework.ai.transformer.splitter.TokenTextSplitter;
 import org.springframework.ai.vectorstore.pgvector.PgVectorStore;
 import org.springframework.core.io.ByteArrayResource;
+import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Service;
 
 import java.io.*;
@@ -25,6 +26,9 @@ public class GitIngestServiceImpl implements GitIngestService {
 
     @Resource
     private PgVectorStore pgVectorStore;
+
+    @Resource
+    private ApplicationContext applicationContext;
 
     @Override
     public IngestResult ingest(String repoUrl,
@@ -94,7 +98,11 @@ public class GitIngestServiceImpl implements GitIngestService {
                 }
             }
 
-            if (!allChunks.isEmpty()) pgVectorStore.accept(allChunks);
+            if (!allChunks.isEmpty()) {
+                PgVectorStore vectorStoreToUse = resolveDynamicPgVectorStore();
+                log.info("GitIngest 使用PgVectorStore: {}", vectorStoreToUse.getClass().getName());
+                vectorStoreToUse.accept(allChunks);
+            }
 
             return IngestResult.builder()
                     .repoUrl(repoUrl)
@@ -110,6 +118,22 @@ public class GitIngestServiceImpl implements GitIngestService {
         } catch (Exception e) {
             throw new RuntimeException(e.getMessage(), e);
         }
+    }
+
+    private PgVectorStore resolveDynamicPgVectorStore() {
+        try {
+            String[] beanNames = applicationContext.getBeanNamesForType(PgVectorStore.class);
+            log.info("GitIngest 可用PgVectorStore Beans: {}", java.util.Arrays.toString(beanNames));
+            for (String beanName : beanNames) {
+                if (beanName.startsWith("vectorStore_")) {
+                    log.info("GitIngest 选择动态PgVectorStore: {}", beanName);
+                    return applicationContext.getBean(beanName, PgVectorStore.class);
+                }
+            }
+        } catch (Exception e) {
+            log.warn("GitIngest 获取动态PgVectorStore失败，使用默认: {}", e.getMessage());
+        }
+        return pgVectorStore;
     }
 
     private static String firstNonEmpty(String... arr) {

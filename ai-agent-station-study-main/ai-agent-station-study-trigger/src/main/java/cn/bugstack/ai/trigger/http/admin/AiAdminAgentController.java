@@ -8,14 +8,22 @@ import cn.bugstack.ai.infrastructure.dao.po.AiAgent;
 import cn.bugstack.ai.infrastructure.dao.po.AiAgentTaskSchedule;
 import cn.bugstack.ai.infrastructure.dao.po.AiClient;
 import cn.bugstack.ai.infrastructure.dao.po.AiAgentFlowConfig;
+import cn.bugstack.ai.domain.agent.model.entity.ArmoryCommandEntity;
+import cn.bugstack.ai.domain.agent.model.valobj.enums.AiAgentEnumVO;
+import cn.bugstack.ai.domain.agent.service.armory.factory.DefaultArmoryStrategyFactory;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.RequestEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Map;
+import java.util.Arrays;
+import java.util.stream.Collectors;
+import java.util.UUID;
 
 /**
  * AI代理管理服务
@@ -40,6 +48,9 @@ public class AiAdminAgentController {
 
     @Resource
     private IAiAgentFlowConfigDao aiAgentFlowConfigDao;
+
+	@Resource
+	private DefaultArmoryStrategyFactory defaultArmoryStrategyFactory;
 
     /**
      * 分页查询AI代理列表
@@ -141,24 +152,31 @@ public class AiAdminAgentController {
             if (aiAgent == null) {
                 return ResponseEntity.badRequest().build();
             }
-            if (aiAgent.getAgentId() == null || aiAgent.getAgentId().trim().isEmpty()) {
-                return ResponseEntity.badRequest().build();
-            }
             if (aiAgent.getAgentName() == null || aiAgent.getAgentName().trim().isEmpty()) {
                 return ResponseEntity.badRequest().build();
             }
-            if (aiAgent.getChannel() == null || aiAgent.getChannel().trim().isEmpty()) {
-                aiAgent.setChannel("agent");
-            }
-            if (aiAgent.getStrategy() == null || aiAgent.getStrategy().trim().isEmpty()) {
-                aiAgent.setStrategy("flowAgentExecuteStrategy");
-            }
-            if (aiAgent.getStatus() == null) {
-                aiAgent.setStatus(1);
-            }
+            // 业务ID不由前端指定；先插入获取主键，再用主键值回填为业务ID
+            aiAgent.setAgentId(null);
+
+            // 描述留空
+            aiAgent.setDescription("");
+            
+            // 其他默认值
+            if (aiAgent.getChannel() == null || aiAgent.getChannel().trim().isEmpty()) aiAgent.setChannel("agent");
+            if (aiAgent.getStrategy() == null || aiAgent.getStrategy().trim().isEmpty()) aiAgent.setStrategy("flowAgentExecuteStrategy");
+            if (aiAgent.getStatus() == null) aiAgent.setStatus(1);
             aiAgent.setCreateTime(LocalDateTime.now());
             aiAgent.setUpdateTime(LocalDateTime.now());
             int count = aiAgentDao.insert(aiAgent);
+            if (count > 0 && aiAgent.getId() != null) {
+                // 将业务ID设置为与主键相同
+                AiAgent patch = new AiAgent();
+                patch.setId(aiAgent.getId());
+                patch.setAgentId(String.valueOf(aiAgent.getId()));
+                patch.setUpdateTime(LocalDateTime.now());
+                aiAgentDao.updateById(patch);
+                log.info("新增AI代理成功，主键id={}，已将业务agentId设置为相同值", aiAgent.getId());
+            }
             return ResponseEntity.ok(count > 0);
         } catch (Exception e) {
             log.error("新增AI代理异常", e);
@@ -175,12 +193,39 @@ public class AiAdminAgentController {
     @RequestMapping(value = "updateAiAgent", method = RequestMethod.POST)
     public ResponseEntity<Boolean> updateAiAgent(@RequestBody AiAgent aiAgent) {
         try {
-            aiAgent.setUpdateTime(LocalDateTime.now());
-            int count = aiAgentDao.updateById(aiAgent);
+            if (aiAgent == null || aiAgent.getId() == null) {
+                log.warn("updateAiAgent 参数错误：缺少主键id，payload={} ", aiAgent);
+                return ResponseEntity.badRequest()
+                        .header("X-Error-Message", "Missing required field: id (primary key)")
+                        .body(false);
+            }
+
+            // 仅更新：名称、启用状态
+            AiAgent origin = aiAgentDao.queryById(aiAgent.getId());
+            if (origin == null) {
+                log.warn("updateAiAgent 未找到记录：id={} (注意：此id为主键，非业务agentId)", aiAgent.getId());
+                return ResponseEntity.badRequest()
+                        .header("X-Error-Message", "Agent not found by primary key id=" + aiAgent.getId())
+                        .body(false);
+            }
+
+            // 忽略前端传入的 agentId 和 id 修改请求，只更新允许的字段
+
+            if (aiAgent.getAgentName() != null && !aiAgent.getAgentName().trim().isEmpty()) {
+                origin.setAgentName(aiAgent.getAgentName().trim());
+            }
+            if (aiAgent.getStatus() != null) {
+                origin.setStatus(aiAgent.getStatus());
+            }
+
+            origin.setUpdateTime(LocalDateTime.now());
+            int count = aiAgentDao.updateById(origin);
             return ResponseEntity.ok(count > 0);
         } catch (Exception e) {
             log.error("更新AI代理异常", e);
-            return ResponseEntity.status(500).build();
+            return ResponseEntity.status(500)
+                    .header("X-Error-Message", e.getMessage() == null ? "Internal Server Error" : e.getMessage())
+                    .body(false);
         }
     }
 
@@ -197,6 +242,20 @@ public class AiAdminAgentController {
             return ResponseEntity.ok(count > 0);
         } catch (Exception e) {
             log.error("删除AI代理异常", e);
+            return ResponseEntity.status(500).build();
+        }
+    }
+
+    /**
+     * 兼容 GET 删除：/ai/admin/agent/deleteAiAgent?id=12
+     */
+    @RequestMapping(value = "deleteAiAgent", method = RequestMethod.GET)
+    public ResponseEntity<Boolean> deleteAiAgentGet(@RequestParam("id") Long id) {
+        try {
+            int count = aiAgentDao.deleteById(id);
+            return ResponseEntity.ok(count > 0);
+        } catch (Exception e) {
+            log.error("删除AI代理异常(GET)", e);
             return ResponseEntity.status(500).build();
         }
     }
@@ -508,6 +567,80 @@ public class AiAdminAgentController {
             return ResponseEntity.status(500).build();
         }
     }
+	/**
+	 * 预热已启用或指定的客户端（动态注册相关 Bean）
+	 *
+	 */
+    @PostMapping("preheat")
+    public ResponseEntity<Map<String, Object>> preheat(RequestEntity<Map<String, Object>> requestEntity) {
+		try {
+            Map<String, Object> body = requestEntity != null ? requestEntity.getBody() : null;
+            log.info("preheat called, body={}", body);
+            List<String> commandIdList;
+            // 1) 若传入 id（业务 agentId），直接按业务 agentId 收集 clientId 列表
+			if (body != null && body.get("id") != null) {
+                String agentId = String.valueOf(body.get("id")).trim();
+                log.info("preheat 使用业务agentId={} 收集客户端", agentId);
+                List<cn.bugstack.ai.infrastructure.dao.po.AiAgentFlowConfig> flowConfigs = aiAgentFlowConfigDao.queryByAgentId(agentId);
+				commandIdList = flowConfigs.stream()
+						.map(c -> c.getClientId())
+						.filter(id -> id != null && !id.trim().isEmpty())
+						.distinct()
+						.collect(Collectors.toList());
+                log.info("根据 业务agentId={} 收集到 {} 个客户端进行预热: {}", agentId, commandIdList.size(), commandIdList);
+			}
+			// 3) 否则预热所有启用的客户端
+			else {
+                log.info("preheat 未提供id，使用启用客户端集合进行预热");
+				List<AiClient> enabledClients = aiClientDao.queryEnabledClients();
+				commandIdList = enabledClients.stream().map(AiClient::getClientId).filter(id -> id != null && !id.trim().isEmpty()).collect(Collectors.toList());
+				log.info("从数据库查询到 {} 个启用的客户端进行预热", commandIdList.size());
+			}
+
+            if (commandIdList == null || commandIdList.isEmpty()) {
+                log.warn("preheat 无可预热的客户端，命令列表为空");
+                return ResponseEntity.badRequest()
+                        .header("X-Error-Message", "No clients to preheat")
+                        .body(java.util.Map.of(
+                                "success", false,
+                                "message", "No clients to preheat"
+                        ));
+            }
+
+			// 执行装配/注册流程
+            try {
+                var handler = defaultArmoryStrategyFactory.armoryStrategyHandler();
+                String result = handler.apply(
+                        ArmoryCommandEntity.builder()
+                                .commandType(AiAgentEnumVO.AI_CLIENT.getCode())
+                                .commandIdList(commandIdList)
+                                .build(),
+                        new DefaultArmoryStrategyFactory.DynamicContext()
+                );
+                log.info("preheat 执行完成，result={}，clients={}", result, commandIdList);
+                return ResponseEntity.ok(java.util.Map.of(
+                        "success", true,
+                        "clientIds", commandIdList,
+                        "message", "预热完成"
+                ));
+            } catch (Exception ex) {
+                log.error("preheat 执行失败: {}", ex.getMessage(), ex);
+                return ResponseEntity.status(500)
+                        .header("X-Error-Message", ex.getMessage() == null ? "Preheat failed" : ex.getMessage())
+                        .body(java.util.Map.of(
+                                "success", false,
+                                "message", ex.getMessage() == null ? "Preheat failed" : ex.getMessage()
+                        ));
+            }
+		} catch (Exception e) {
+			log.error("预热客户端失败", e);
+            return ResponseEntity.status(500).body(java.util.Map.of(
+                    "success", false,
+                    "message", e.getMessage() == null ? "Internal Server Error" : e.getMessage()
+            ));
+		}
+	}
+    
 
     // ==================== AI Agent Flow Config 相关接口 ====================
 
